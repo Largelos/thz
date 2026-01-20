@@ -227,7 +227,7 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
             device_id: The unique device identifier.
 
         Attributes:
-            _name (str): Name of the sensor.
+            _attr_name (str): Name of the sensor.
             _block: Block associated with the sensor.
             _offset: Offset value from the configuration.
             _length: Length value from the configuration.
@@ -242,7 +242,7 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
 
         e = normalize_entry(entry)
-        self._name = e["name"]
+        self._attr_name = e["name"]
         self._block = block
         self._offset = e["offset"]
         self._length = e["length"]
@@ -260,7 +260,7 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
 
         # Set default visibility based on entity naming conventions
         #TODO check implementation, until then, keep entities visible by default
-        #self._attr_entity_registry_enabled_default = not should_hide_entity_by_default(self._name)
+        self._attr_entity_registry_enabled_default = True
 
     @property
     def name(self) -> str | None:
@@ -273,10 +273,11 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
             return None
         return self._attr_name
 
-    # @property
-    # def entity_registry_enabled_default(self) -> bool:
-    #     """Return if the entity should be enabled when first added to the registry."""
-    #     return self._attr_entity_registry_enabled_default
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added to the registry."""
+        return True
+        # return self._attr_entity_registry_enabled_default
 
     @property
     def native_value(self) -> StateType | int | float | bool | str | None:
@@ -296,7 +297,7 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
             if len(payload) < self._offset + self._length:
                 _LOGGER.warning(
                     "Payload too short for sensor %s: expected at least %d bytes, got %d",
-                    self._name,
+                    self._attr_name,
                     self._offset + self._length,
                     len(payload),
                 )
@@ -305,7 +306,7 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
             return decode_value(raw_bytes, self._decode_type, self._factor)
         except (ValueError, IndexError, TypeError) as err:
             _LOGGER.error(
-                "Error decoding sensor %s: %s", self._name, err, exc_info=True
+                "Error decoding sensor %s: %s", self._attr_name, err, exc_info=True
             )
             return None
 
@@ -373,7 +374,7 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
         """
 
         return (
-            f"thz_{self._block}_{self._offset}_{self._name.lower().replace(' ', '_')}"
+            f"thz_{self._block}_{self._offset}_{self._attr_name.lower().replace(' ', '_')}"
         )
 
     @property
