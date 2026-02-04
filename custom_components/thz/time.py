@@ -204,7 +204,7 @@ class THZTime(THZBaseEntity, TimeEntity):
             translation_key=None,  # TODO add translation keys for time entities
         )
 
-        # Override has_entity_name for time entities (always False for backward compatibility)
+        # Explicitly enable has_entity_name for time entities
         self._attr_has_entity_name = True
 
         self._attr_native_value = None
@@ -236,6 +236,14 @@ class THZTime(THZBaseEntity, TimeEntity):
             await asyncio.sleep(0.01)
 
         # Time values are stored as single bytes (0-95 quarters)
+        if not value_bytes:
+            _LOGGER.warning(
+                "No data received for time %s (command %s), keeping previous value",
+                self._attr_name,
+                self._command,
+            )
+            return
+
         num = value_bytes[0]
         self._attr_native_value = quarters_to_time(num)
         _LOGGER.debug("Updated time %s: %s quarters -> %s", self._attr_name, num, self._attr_native_value)
@@ -303,14 +311,17 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
             translation_key=None,  # TODO add translation keys for time entities
         )
 
-        # Override has_entity_name for time entities (always False for backward compatibility)
+        # Explicitly enable has_entity_name for time entities
         self._attr_has_entity_name = True
 
         self._time_type = time_type
         self._attr_native_value = None
 
         # Override unique_id to include time_type
-        self._attr_unique_id = f"thz_schedule_time_{self._command.lower()}_{name.lower().replace(' ', '_')}_{time_type}"
+        normalized_name = name.lower().replace(" ", "_")
+        self._attr_unique_id = (
+            f"thz_schedule_time_{self._command.lower()}_{normalized_name}_{time_type}"
+        )
 
     @property
     def native_value(self):
@@ -333,6 +344,14 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
         # However, read_value returns data starting at offset 4, so:
         # - value_bytes[0]: start time
         # - value_bytes[1]: end time
+        if not value_bytes or len(value_bytes) < 2:
+            _LOGGER.warning(
+                "No data received for schedule time %s (%s), keeping previous value",
+                self.name,
+                self._time_type,
+            )
+            return
+
         if self._time_type == "start":
             num = value_bytes[0]
         else:  # "end"
