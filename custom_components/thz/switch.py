@@ -66,7 +66,7 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
             scan_interval=scan_interval,
             translation_key=get_translation_key(name),
         )
-        
+
         # Switch-specific attributes
         self._is_on = False
 
@@ -78,9 +78,9 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
     async def async_update(self) -> None:
         """Update the switch state by reading the current value from the device."""
         _LOGGER.debug(
-            "Updating switch %s with command %s", self._attr_name, self._command
+            "Updating switch %s with command %s", self.name, self._command
         )
-        
+
         async with self._device.lock:
             value_bytes = await self.hass.async_add_executor_job(
                 self._device.read_value,
@@ -91,66 +91,66 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
             )
             # Short pause to ensure the device is ready
             await asyncio.sleep(0.01)
-        
+
         # Validate that we received data
         if not value_bytes:
             _LOGGER.warning(
-                "No data received for switch %s, keeping previous value", self._attr_name
+                "No data received for switch %s, keeping previous value", self.name
             )
             return
-        
-        _LOGGER.debug("Received bytes for %s: %s", self._attr_name, value_bytes.hex())
-        
+
+        _LOGGER.debug("Received bytes for %s: %s", self.name, value_bytes.hex())
+
         try:
             # Use centralized codec for decoding
             self._is_on = THZValueCodec.decode_switch(value_bytes)
-            _LOGGER.debug("Decoded switch state for %s: %s", self._attr_name, self._is_on)
+            _LOGGER.debug("Decoded switch state for %s: %s", self.name, self._is_on)
         except (ValueError, IndexError, TypeError) as err:
             _LOGGER.error(
-                "Error decoding switch %s: %s", self._attr_name, err, exc_info=True
+                "Error decoding switch %s: %s", self.name, err, exc_info=True
             )
             # Keep previous value on error
 
     async def turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch by sending a command to the device."""
-        _LOGGER.debug("Turning on switch %s", self._attr_name)
-        
+        _LOGGER.debug("Turning on switch %s", self.name)
+
         try:
             # Use centralized codec for encoding
             value_bytes = THZValueCodec.encode_switch(True)
-            
+
             async with self._device.lock:
                 await self.hass.async_add_executor_job(
                     self._device.write_value,
                     bytes.fromhex(self._command),
                     value_bytes,
                 )
-            
+
             self._is_on = True
         except (ValueError, TypeError) as err:
             _LOGGER.error(
-                "Error encoding switch %s to turn on: %s", 
-                self._attr_name, err, exc_info=True
+                "Error encoding switch %s to turn on: %s",
+                self.name, err, exc_info=True
             )
 
     async def turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch by sending a command to the device."""
-        _LOGGER.debug("Turning off switch %s", self._attr_name)
-        
+        _LOGGER.debug("Turning off switch %s", self.name)
+
         try:
             # Use centralized codec for encoding
             value_bytes = THZValueCodec.encode_switch(False)
-            
+
             async with self._device.lock:
                 await self.hass.async_add_executor_job(
                     self._device.write_value,
                     bytes.fromhex(self._command),
                     value_bytes,
                 )
-            
+
             self._is_on = False
         except (ValueError, TypeError) as err:
             _LOGGER.error(
-                "Error encoding switch %s to turn off: %s", 
-                self._attr_name, err, exc_info=True
+                "Error encoding switch %s to turn off: %s",
+                self.name, err, exc_info=True
             )

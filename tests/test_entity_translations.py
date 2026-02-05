@@ -27,10 +27,17 @@ class TestEntityTranslationKeys:
         assert "p03RoomTempStandby" in ENTITY_TRANSLATION_KEYS
 
     def test_dhw_temp_keys_exist(self):
-        """Test that DHW temperature keys exist."""
+        """Test that DHW temperature keys exist (write_map_206 format)."""
         assert "p04DHWsetTempDay" in ENTITY_TRANSLATION_KEYS
         assert "p05DHWsetTempNight" in ENTITY_TRANSLATION_KEYS
         assert "p06DHWsetTempStandby" in ENTITY_TRANSLATION_KEYS
+    
+    def test_dhw_temp_keys_exist_439_539(self):
+        """Test that DHW temperature keys exist (write_map_439_539 format)."""
+        assert "p04DHWsetDayTemp" in ENTITY_TRANSLATION_KEYS
+        assert "p05DHWsetNightTemp" in ENTITY_TRANSLATION_KEYS
+        assert "p06DHWsetStandbyTemp" in ENTITY_TRANSLATION_KEYS
+        assert "p11DHWsetManualTemp" in ENTITY_TRANSLATION_KEYS
 
     def test_fan_stage_keys_exist(self):
         """Test that fan stage keys exist."""
@@ -72,9 +79,16 @@ class TestGetTranslationKey:
         assert result == "room_temp_day"
 
     def test_dhw_temp(self):
-        """Test getting DHW temperature key."""
+        """Test getting DHW temperature key (write_map_206 format)."""
         result = get_translation_key("p04DHWsetTempDay")
         assert result == "dhw_temp_day"
+    
+    def test_dhw_temp_439_539(self):
+        """Test getting DHW temperature key (write_map_439_539 format)."""
+        result = get_translation_key("p04DHWsetDayTemp")
+        assert result == "dhw_temp_day"
+        result = get_translation_key("p05DHWsetNightTemp")
+        assert result == "dhw_temp_night"
 
     def test_non_existing_key(self):
         """Test getting a non-existing key returns None."""
@@ -108,3 +122,118 @@ class TestGetTranslationKey:
         """Test solar-related keys."""
         assert get_translation_key("p80EnableSolar") == "enable_solar"
         assert get_translation_key("p81DiffTempSolarLoading") == "diff_temp_solar_loading"
+    
+    def test_cooling_keys(self):
+        """Test cooling parameter keys (p99 extended parameters)."""
+        assert get_translation_key("p99CoolingHC1SetTemp") == "cooling_hc1_set_temp"
+        assert get_translation_key("p99CoolingHC2SetTemp") == "cooling_hc2_set_temp"
+    
+    def test_pump_rate_keys(self):
+        """Test pump rate keys."""
+        assert get_translation_key("p99PumpRateDHW") == "pump_rate_dhw"
+        assert get_translation_key("p99PumpRateHC") == "pump_rate_hc"
+    
+    def test_alternative_naming(self):
+        """Test that alternative naming conventions map to the same keys."""
+        # DHW temp variations
+        assert get_translation_key("p04DHWsetTempDay") == get_translation_key("p04DHWsetDayTemp")
+        assert get_translation_key("p05DHWsetTempNight") == get_translation_key("p05DHWsetNightTemp")
+        # Passive cooling case variation
+        assert get_translation_key("p75PassiveCooling") == get_translation_key("p75passiveCooling")
+    
+    def test_program_hc1_all_keys(self):
+        """Test all HC1 program schedule keys exist and are valid."""
+        days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "So"]
+        day_ranges = ["Mo-Fr", "Sa-So", "Mo-So"]
+        slots = [0, 1, 2]
+        
+        # Test individual days
+        for day in days:
+            for slot in slots:
+                key = f"programHC1_{day}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                assert translation_key.startswith("programhc1_"), f"Invalid translation key format: {translation_key}"
+                # Verify no hyphens in translation key
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+        
+        # Test day ranges
+        for day_range in day_ranges:
+            for slot in slots:
+                key = f"programHC1_{day_range}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                # Verify hyphens are converted to underscores
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+    
+    def test_program_hc2_all_keys(self):
+        """Test all HC2 program schedule keys exist and are valid."""
+        days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "So"]
+        day_ranges = ["Mo-Fr", "Sa-So", "Mo-So"]
+        slots = [0, 1, 2]
+        
+        for day in days:
+            for slot in slots:
+                key = f"programHC2_{day}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+        
+        for day_range in day_ranges:
+            for slot in slots:
+                key = f"programHC2_{day_range}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+    
+    def test_program_dhw_all_keys(self):
+        """Test all DHW program schedule keys exist and are valid."""
+        days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "So"]
+        day_ranges = ["Mo-Fr", "Sa-So", "Mo-So"]
+        slots = [0, 1, 2]
+        
+        for day in days:
+            for slot in slots:
+                key = f"programDHW_{day}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+        
+        for day_range in day_ranges:
+            for slot in slots:
+                key = f"programDHW_{day_range}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+    
+    def test_program_fan_all_keys(self):
+        """Test all Fan program schedule keys exist and are valid."""
+        days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "So"]
+        day_ranges = ["Mo-Fr", "Sa-So", "Mo-So"]
+        slots = [0, 1, 2]
+        
+        for day in days:
+            for slot in slots:
+                key = f"programFan_{day}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+        
+        for day_range in day_ranges:
+            for slot in slots:
+                key = f"programFan_{day_range}_{slot}"
+                translation_key = get_translation_key(key)
+                assert translation_key is not None, f"Missing translation for {key}"
+                assert "-" not in translation_key, f"Translation key {translation_key} contains hyphen"
+    
+    def test_all_program_keys_count(self):
+        """Test that we have exactly 120 base program translation keys.
+        
+        This validates the base program keys only (without _start/_end suffixes).
+        Total program-related keys: 120 base + 120 _start + 120 _end = 360 keys.
+        Structure: 4 program types × 30 entities each = 120 base keys
+        - Each type has: 7 individual days × 3 slots + 3 day ranges × 3 slots = 30 keys
+        """
+        program_keys = [k for k in ENTITY_TRANSLATION_KEYS.keys() if k.startswith("program")]
+        # 4 program types × 30 entities each = 120 total base keys
+        assert len(program_keys) == 120, f"Expected 120 program keys, found {len(program_keys)}"

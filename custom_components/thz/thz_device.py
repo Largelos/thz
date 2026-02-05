@@ -1,4 +1,10 @@
-import asyncio  # noqa: D100
+"""THZ device communication module.
+
+This module provides the THZDevice class which handles serial and TCP
+communication with Stiebel Eltron LWZ / Tecalor THZ heat pumps.
+"""
+
+import asyncio
 import logging
 import socket
 import time
@@ -95,11 +101,117 @@ class THZDevice:
         )
 
     def _connect_tcp(self):
-        """Connect to ser2net (TCP/IP)."""
+        """Connect to ser2net (TCP/IP) with keepalive enabled.
+
+        Enables TCP keepalive to prevent connection timeouts when using ser2net.
+        This is critical for long-running connections that may be idle between polls.
+        """
         _LOGGER.debug("Opening TCP connection: %s:%s", self.host, self.tcp_port)
         self.ser = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.ser.settimeout(self.read_timeout)
+
+        # Enable TCP keepalive to prevent connection timeout
+        # This is essential for ser2net connections that may timeout after inactivity
+        self.ser.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+
+        # Configure keepalive parameters (Linux-specific but safe on other platforms)
+        # These settings ensure the connection stays alive even during long idle periods
+        try:
+            # Start sending keepalive probes after 60 seconds of inactivity
+            if hasattr(socket, 'TCP_KEEPIDLE'):
+                self.ser.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+            # Send keepalive probes every 10 seconds
+            if hasattr(socket, 'TCP_KEEPINTVL'):
+                self.ser.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+            # Close connection after 6 failed probes (60 seconds total)
+            if hasattr(socket, 'TCP_KEEPCNT'):
+                self.ser.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 6)
+            _LOGGER.debug("TCP keepalive enabled with idle=60s, interval=10s, count=6")
+        except (OSError, AttributeError) as e:
+            # Keepalive parameters may not be available on all platforms
+            _LOGGER.warning("Could not set TCP keepalive parameters: %s", e)
+
         self.ser.connect((self.host, self.tcp_port))
+        _LOGGER.info("TCP connection established with keepalive enabled")
+
+    def _is_connection_alive(self) -> bool:
+        """Check if the connection is still alive.
+
+        Uses multiple methods to verify connection health:
+        1. Check if socket/serial file descriptor is valid
+        2. For TCP: Try MSG_PEEK to detect closed connections
+        3. For serial: Check is_open status
+
+        Returns:
+            bool: True if connection is alive, False otherwise
+        """
+        if self.ser is None:
+            return False
+
+        # Check if it's a socket - use hasattr to avoid issues with mocks
+        if hasattr(self.ser, 'fileno') and hasattr(self.ser, 'recv'):
+            # This is likely a socket
+            try:
+                # Check if socket is still valid
+                if self.ser.fileno() == -1:
+                    return False
+
+                # Save original timeout to restore after the check
+                original_timeout = self.ser.gettimeout()
+
+                # Try a quick peek without blocking to detect closed connections
+                # This is a best-effort check; MSG_PEEK may not work on all platforms
+                self.ser.setblocking(False)
+                try:
+                    # recv with MSG_PEEK doesn't remove data from buffer
+                    # Empty return on non-blocking socket just means no data available
+                    self.ser.recv(1, socket.MSG_PEEK)
+                except BlockingIOError:
+                    # No data available but connection is alive
+                    pass
+                except (OSError, socket.error):
+                    # Connection is broken
+                    return False
+                finally:
+                    # Always restore the original timeout
+                    try:
+                        self.ser.settimeout(original_timeout)
+                    except (OSError, socket.error):
+                        # Socket may be in bad state, ignore
+                        pass
+
+                return True
+            except (OSError, socket.error, AttributeError):
+                return False
+        elif hasattr(self.ser, 'is_open'):
+            # This is likely a serial connection
+            try:
+                return self.ser.is_open
+            except AttributeError:
+                return False
+
+        # Unknown connection type or uninitialized
+        return False
+
+    def _reconnect(self):
+        """Attempt to reconnect if connection was lost."""
+        _LOGGER.warning("Attempting to reconnect...")
+        try:
+            if self.ser is not None:
+                try:
+                    self.ser.close()
+                except Exception:
+                    pass
+
+            if self.connection == "usb":
+                self._connect_serial()
+            elif self.connection == "ip":
+                self._connect_tcp()
+
+            _LOGGER.info("Reconnection successful")
+        except Exception as e:
+            _LOGGER.error("Reconnection failed: %s", e)
+            raise
 
     def read_block_cached(self, block: bytes, cache_duration: float = 60) -> bytes:
         """Read a block of data with caching support.
@@ -124,90 +236,165 @@ class THZDevice:
         return data
 
     def send_request(self, telegram: bytes, get_or_set: str) -> bytes:
-        """Send request via USB or TCP, receive response."""
+        """Send request via USB or TCP, receive response.
+
+        Automatically reconnects if connection is lost.
+
+        Raises:
+            ConnectionError: If connection fails and reconnection is unsuccessful.
+            RuntimeError: If device communication fails (handshake, timeout,
+                invalid response).
+        """
         timeout = self.read_timeout
         data = bytearray()
+        max_retries = 1  # Allow one retry on connection error
+        last_error = None
 
-        try:
-            # 1. Send greeting (0x02)
-            self._write_bytes(const.STARTOFTEXT)
-            # _LOGGER.info("Greeting sent (0x02)")
+        for attempt in range(max_retries + 1):
+            try:
+                # Check connection health before sending (only if initialized)
+                if self._initialized and not self._is_connection_alive():
+                    _LOGGER.warning(
+                        "Connection not alive, attempting reconnect (attempt %d/%d)",
+                        attempt + 1, max_retries + 1
+                    )
+                    self._reconnect()
 
-            # 2. Expect 0x10 response
-            response = self._read_exact(1, timeout)
-            if response != const.DATALINKESCAPE:
-                _LOGGER.error("Handshake 1 failed, received: %s", response.hex())
-                return b""
+                # 1. Send greeting (0x02)
+                self._write_bytes(const.STARTOFTEXT)
 
-            # 3. Send telegram
-            self._reset_input_buffer()
-            self._write_bytes(telegram)
-            # _LOGGER.info("Request sent: %s", telegram.hex())
+                # 2. Expect 0x10 response
+                response = self._read_exact(1, timeout)
+                if response != const.DATALINKESCAPE:
+                    resp_hex = response.hex() if response else 'no data'
+                    error_msg = f"Handshake 1 failed, received: {resp_hex}"
+                    _LOGGER.error(error_msg)
+                    raise RuntimeError(error_msg)
 
-            # 4. Expect 0x10 0x02 response
-            # Note: Device may send 0x10 and 0x02 separately with a delay
-            response = self._read_exact(2, timeout)
-            
-            # Handle case where device sends 0x10 first, then 0x02 after delay
-            if response == const.DATALINKESCAPE:
-                _LOGGER.debug("Received 0x10, waiting for 0x02...")
-                # Add delay for firmware 2.x as per Perl module
-                if self._firmware_version and self._firmware_version.startswith("2"):
-                    time.sleep(0.005)
-                second_byte = self._read_exact(1, timeout)
-                if second_byte == const.STARTOFTEXT:
-                    response = const.DATALINKESCAPE + const.STARTOFTEXT
-                else:
-                    _LOGGER.error("Handshake 2 failed: received 0x10 then %s", second_byte.hex())
-                    return b""
-            elif response == const.STARTOFTEXT:
-                # Sometimes device sends just 0x02 (as per Perl code line 1525)
-                _LOGGER.debug("Received only 0x02 as response")
-                response = const.DATALINKESCAPE + const.STARTOFTEXT  # Accept it
-            
-            if response != const.DATALINKESCAPE + const.STARTOFTEXT:
-                _LOGGER.error("Handshake 2 failed, received: %s", response.hex())
-                return b""
+                # 3. Send telegram
+                self._reset_input_buffer()
+                self._write_bytes(telegram)
 
-            if get_or_set == "get":
-                # 5. Send confirmation (0x10)
-                self._write_bytes(const.DATALINKESCAPE)
+                # 4. Expect 0x10 0x02 response
+                # Note: Device may send 0x10 and 0x02 separately with a delay
+                response = self._read_exact(2, timeout)
 
-                # 6. Receive data telegram until 0x10 0x03
-                start_time = time.time()
-                while time.time() - start_time < timeout:
-                    chunk = self._read_available()
-                    if chunk:
-                        data.extend(chunk)
-                        if (
-                            len(data) >= 8
-                            and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
-                        ):
-                            break
+                # Handle case where device sends 0x10 first, then 0x02 after delay
+                if response == const.DATALINKESCAPE:
+                    _LOGGER.debug("Received 0x10, waiting for 0x02...")
+                    # Add delay for firmware 2.x as per Perl module
+                    # time.sleep() is used because this runs in executor (blocking)
+                    fw_ver = self._firmware_version
+                    if fw_ver and fw_ver.startswith("2"):
+                        time.sleep(0.005)
+                    second_byte = self._read_exact(1, timeout)
+                    if second_byte == const.STARTOFTEXT:
+                        response = const.DATALINKESCAPE + const.STARTOFTEXT
+                    else:
+                        byte_hex = second_byte.hex() if second_byte else 'no data'
+                        error_msg = f"Handshake 2 failed: received 0x10 then {byte_hex}"
+                        _LOGGER.error(error_msg)
+                        raise RuntimeError(error_msg)
+                elif response == const.STARTOFTEXT:
+                    # Sometimes device sends just 0x02 (as per Perl code line 1525)
+                    _LOGGER.debug("Received only 0x02 as response")
+                    response = const.DATALINKESCAPE + const.STARTOFTEXT  # Accept it
 
-                # _LOGGER.info("Received raw data: %s", data.hex())
+                if response != const.DATALINKESCAPE + const.STARTOFTEXT:
+                    resp_hex = response.hex() if response else 'no data'
+                    error_msg = f"Handshake 2 failed, received: {resp_hex}"
+                    _LOGGER.error(error_msg)
+                    raise RuntimeError(error_msg)
 
-                if not (
-                    len(data) >= 8 and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
-                ):
-                    _LOGGER.error("No valid response received after data request")
-                    return b""
+                if get_or_set == "get":
+                    # 5. Send confirmation (0x10)
+                    self._write_bytes(const.DATALINKESCAPE)
 
-            # 7. End of communication
-            self._write_bytes(const.STARTOFTEXT)
-            return bytes(data)
-        except Exception as e:
-            _LOGGER.error("Error in send_request: %s", e)
-            return b""
+                    # 6. Receive data telegram until 0x10 0x03
+                    start_time = time.time()
+                    while time.time() - start_time < timeout:
+                        chunk = self._read_available()
+                        if chunk:
+                            data.extend(chunk)
+                            if (
+                                len(data) >= 8
+                                and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
+                            ):
+                                break
+
+                    if not (
+                        len(data) >= 8
+                        and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
+                    ):
+                        error_msg = (
+                            "No valid response received after data request - "
+                            "timeout or incomplete data"
+                        )
+                        _LOGGER.error(error_msg)
+                        raise RuntimeError(error_msg)
+
+                # 7. End of communication
+                self._write_bytes(const.STARTOFTEXT)
+                return bytes(data)
+
+            except ConnectionError as e:
+                last_error = e
+                _LOGGER.error(
+                    "Connection error in send_request (attempt %d/%d): %s",
+                    attempt + 1, max_retries + 1, e
+                )
+                if attempt < max_retries:
+                    # Try to reconnect for next attempt
+                    try:
+                        self._reconnect()
+                        continue  # Retry after successful reconnection
+                    except Exception as reconnect_error:
+                        _LOGGER.error("Reconnect failed: %s", reconnect_error)
+                        # Fall through to raise the original connection error
+                # Re-raise the connection error after max retries
+                raise ConnectionError(
+                    f"Connection failed after {max_retries + 1} attempts: {e}"
+                ) from e
+
+            except RuntimeError as e:
+                # Protocol/handshake errors - don't retry these
+                last_error = e
+                _LOGGER.error("Protocol error in send_request: %s", e)
+                raise
+
+            except Exception as e:
+                last_error = e
+                _LOGGER.error("Unexpected error in send_request: %s", e)
+                raise RuntimeError(f"Device communication failed: {e}") from e
+
+        # Should not reach here, but just in case
+        if last_error:
+            raise last_error
+        raise RuntimeError("send_request failed without specific error")
 
     # Helper methods
     def _write_bytes(self, data: bytes):
-        """Send bytes depending on connection type."""
-        if isinstance(self.ser, socket.socket):  # TCP Socket
-            self.ser.send(data)
-        elif isinstance(self.ser, serial.Serial):  # Serial
-            self.ser.write(data)
-            self.ser.flush()
+        """Send bytes depending on connection type.
+
+        Raises:
+            ConnectionError: If the connection is closed or broken
+        """
+        try:
+            # Use hasattr to check connection type instead of isinstance
+            # This is more robust when modules are mocked in tests
+            if hasattr(self.ser, 'send') and hasattr(self.ser, 'recv'):
+                # This is a socket
+                self.ser.send(data)
+            elif hasattr(self.ser, 'write') and hasattr(self.ser, 'flush'):
+                # This is serial
+                self.ser.write(data)
+                self.ser.flush()
+            else:
+                raise ConnectionError("Unknown connection type")
+        except (OSError, socket.error, BrokenPipeError) as e:
+            # Connection reset, broken pipe, or other socket/serial errors
+            _LOGGER.error("Connection error during write: %s", e)
+            raise ConnectionError(f"Failed to write to connection: {e}") from e
 
     def _read_exact(self, size: int, timeout: float) -> bytes:
         """Read exactly n bytes, regardless of USB or TCP."""
@@ -221,16 +408,39 @@ class THZDevice:
         return bytes(buf)
 
     def _read_available(self) -> bytes:
-        """Read available bytes."""
-        if isinstance(self.ser, socket.socket) and hasattr(
-            self.ser, "recv"
-        ):  # TCP Socket
+        """Read available bytes.
+
+        Raises:
+            ConnectionError: If the connection is closed or broken
+        """
+        # Use hasattr to check connection type instead of isinstance
+        # This is more robust when modules are mocked in tests
+        if hasattr(self.ser, 'recv') and hasattr(self.ser, 'setblocking'):
+            # This is a socket
+            # Save original timeout to restore after reading
+            original_timeout = self.ser.gettimeout()
             try:
                 self.ser.setblocking(False)
-                return self.ser.recv(1024)
+                data = self.ser.recv(1024)
+                if not data and hasattr(self.ser, 'fileno') and self.ser.fileno() == -1:
+                    # Socket is closed
+                    raise ConnectionError("TCP socket connection closed")
+                return data
             except BlockingIOError:
                 return b""
-        elif isinstance(self.ser, serial.Serial):  # Serial
+            except (OSError, socket.error) as e:
+                # Connection reset, broken pipe, or other socket errors
+                _LOGGER.error("TCP socket error during read: %s", e)
+                raise ConnectionError(f"TCP connection error: {e}") from e
+            finally:
+                # Always restore the original timeout
+                try:
+                    self.ser.settimeout(original_timeout)
+                except (OSError, socket.error):
+                    # Socket may be in bad state, ignore
+                    pass
+        elif hasattr(self.ser, 'in_waiting') and hasattr(self.ser, 'read'):
+            # This is serial
             waiting = getattr(self.ser, "in_waiting", 0)
             if waiting > 0:
                 return self.ser.read(waiting)
@@ -244,9 +454,11 @@ class THZDevice:
         TCP sockets do not have an input buffer to reset, so this is only
         relevant for serial connections.
         """
-        if self.ser is not None and isinstance(self.ser, serial.Serial):
-            if hasattr(self.ser, "reset_input_buffer"):
+        if self.ser is not None and hasattr(self.ser, "reset_input_buffer"):
+            try:
                 self.ser.reset_input_buffer()
+            except AttributeError:
+                pass
 
     def close(self):
         """Close the connection."""
@@ -270,17 +482,17 @@ class THZDevice:
 
     def escape(self, data: bytes) -> bytes:
         """Add escape sequences to data before sending.
-        
+
         According to the protocol (from FHEM THZ module):
         - Each 0x10 byte must be escaped as 0x10 0x10
         - Each 0x2B byte must be escaped as 0x2B 0x18
-        
+
         The order of escaping (0x10 first, then 0x2B) matches the FHEM implementation
         and is safe because these escape sequences don't interfere with each other.
-        
+
         Args:
             data: Raw bytes to escape
-            
+
         Returns:
             Escaped bytes ready to send
         """
@@ -348,7 +560,12 @@ class THZDevice:
         get_or_set: str = "get",
         payload_to_deliver: bytes = b"",
     ) -> bytes:
-        """Reads or writes a register from/to the THZ device."""
+        """Reads or writes a register from/to the THZ device.
+
+        Raises:
+            ConnectionError: If connection fails
+            RuntimeError: If device communication fails
+        """
         header = b"\x01\x00" if get_or_set == "get" else b"\x01\x80"
         # Standard Header für "get" und "set"
         footer = const.DATALINKESCAPE + const.ENDOFTEXT  # Standard Footer
@@ -366,7 +583,9 @@ class THZDevice:
         # _LOGGER.debug("Payload dekodiert: %s", payload.hex())
         if get_or_set == "get":
             decoded = self.decode_response(raw_response)
-            return decoded if decoded is not None else b""
+            if decoded is None:
+                raise RuntimeError("Failed to decode device response")
+            return decoded
 
         return b""
 
@@ -414,26 +633,26 @@ class THZDevice:
     def read_value(
         self, addr_bytes: bytes, get_or_set: str, offset: int, length: int
     ) -> bytes:
-        r"""Reads a value from the THZ device.
+        r"""Read a value from the THZ device.
 
         Args:
-            addr_bytes: bytes (e.g. b'\xfb')
-            get_or_set: "get" or "set"
+            addr_bytes: Register address bytes (e.g. b'\xfb').
+            get_or_set: Operation type, "get" or "set".
+            offset: Byte offset in the response to read from.
+            length: Number of bytes to read from the response.
 
         Returns:
-            byte value read from the device
+            The requested bytes from the device response.
         """
         response = self.read_write_register(addr_bytes, get_or_set)
-        # _LOGGER.info("Antwort von Wärmepumpe: %s", response.hex())
-        # _LOGGER.info("Gelesener Wert (Offset %s, Length %s): %s", offset, length, value_raw.hex())
         return response[offset : offset + length]
 
     def write_value(self, addr_bytes: bytes, value: bytes) -> None:
         r"""Write a value to the THZ device.
 
         Args:
-            addr_bytes: bytes (e.g. b'\xfb')
-            value: integer value to write
+            addr_bytes: Register address bytes (e.g. b'\xfb').
+            value: Bytes to write to the device.
         """
         self.read_write_register(addr_bytes, "set", value)
         _LOGGER.debug("Value %s written to address %s", value, addr_bytes.hex())

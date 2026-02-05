@@ -26,11 +26,16 @@ ENTITY_TRANSLATION_KEYS = {
     "p01RoomTempDayHC2SummerMode": "room_temp_day_hc2_summer",
     "p02RoomTempNightHC2SummerMode": "room_temp_night_hc2_summer",
     "p03RoomTempStandbyHC2SummerMode": "room_temp_standby_hc2_summer",
-    # DHW temperatures
+    # DHW temperatures (write_map_206 format)
     "p04DHWsetTempDay": "dhw_temp_day",
     "p05DHWsetTempNight": "dhw_temp_night",
     "p06DHWsetTempStandby": "dhw_temp_standby",
     "p11DHWsetTempManual": "dhw_temp_manual",
+    # DHW temperatures (write_map_439_539 format - different naming)
+    "p04DHWsetDayTemp": "dhw_temp_day",
+    "p05DHWsetNightTemp": "dhw_temp_night",
+    "p06DHWsetStandbyTemp": "dhw_temp_standby",
+    "p11DHWsetManualTemp": "dhw_temp_manual",
     # Fan stages
     "p07FanStageDay": "fan_stage_day",
     "p08FanStageNight": "fan_stage_night",
@@ -61,14 +66,18 @@ ENTITY_TRANSLATION_KEYS = {
     "p29HystAsymmetry": "hysteresis_asymmetry",
     "p30integralComponent": "integral_component",
     "p31MaxBoostStages": "max_boost_stages",
+    "p31MaxBoosterStgHtg": "max_boost_stages",  # Alternative name
     "p32HystDHW": "hysteresis_dhw",
     # Booster settings
     "p33BoosterTimeoutDHW": "booster_timeout_dhw",
     "p34TempLimitBoostDHW": "temp_limit_boost_dhw",
+    "p34BoosterDHWTempAct": "temp_limit_boost_dhw",  # Alternative name
     "p79BoosterTimeoutHC": "booster_timeout_hc",
     # Pasteurization
     "p35PasteurisationInterval": "pasteurization_interval",
+    "p35PasteurisationTemp": "pasteurization_temp",
     "p36MaxDurationDHWLoad": "max_duration_dhw_load",
+    "p36DHWMaxTime": "max_duration_dhw_load",  # Alternative name
     # Fan airflow settings
     "p37Fanstage1AirflowInlet": "fan_stage1_airflow_inlet",
     "p38Fanstage2AirflowInlet": "fan_stage2_airflow_inlet",
@@ -93,15 +102,27 @@ ENTITY_TRANSLATION_KEYS = {
     "p58SuppressTempCaptPumpStart": "suppress_temp_capt_pump_start",
     # Passive cooling
     "p75PassiveCooling": "passive_cooling",
+    "p75passiveCooling": "passive_cooling",  # Alternative casing
+    # Room and outdoor temperature
+    "p76RoomThermCorrection": "room_therm_correction",
     # Filter and temperature
     "p77OutTempFilterTime": "out_temp_filter_time",
+    "p77OutThermFilterTime": "out_temp_filter_time",  # Alternative name
     "p78DualModePoint": "dual_mode_point",
     # Solar
     "p80EnableSolar": "enable_solar",
     "p81DiffTempSolarLoading": "diff_temp_solar_loading",
     "p82DelayCompStartSolar": "delay_comp_start_solar",
+    "p83DHWsetSolarTemp": "dhw_temp_solar_mode",  # Solar DHW temperature
     "p84DHWTempSolarMode": "dhw_temp_solar_mode",
     "p84EnableDHWBuffer": "enable_dhw_buffer",
+    # Defrost and filter
+    "p85DefrStartThreshold": "defrost_start_threshold",
+    "p85MaxDefrostDur": "max_defrost_duration",
+    "p85FilterSpeed": "filter_speed",
+    "p86OutTempCorrection": "out_temp_correction",
+    # DHW economy mode
+    "p89DHWeco": "dhw_eco",
     # Clock settings
     "pClockDay": "clock_day",
     "pClockHour": "clock_hour",
@@ -163,15 +184,172 @@ ENTITY_TRANSLATION_KEYS = {
     "progHC2Friday": "prog_hc2_friday",
     "progHC2Saturday": "prog_hc2_saturday",
     "progHC2Sunday": "prog_hc2_sunday",
+    # Cooling settings (p99 extended parameters)
+    "p99CoolingHC1SetTemp": "cooling_hc1_set_temp",
+    "p99CoolingHC1Switch": "cooling_hc1_switch",
+    "p99CoolingHC1HysterFlowTemp": "cooling_hc1_hyster_flow_temp",
+    "p99CoolingHC1HysterRoomTemp": "cooling_hc1_hyster_room_temp",
+    "p99CoolingHC2SetTemp": "cooling_hc2_set_temp",
+    "p99CoolingHC2Switch": "cooling_hc2_switch",
+    "p99CoolingHC2HysterFlowTemp": "cooling_hc2_hyster_flow_temp",
+    "p99CoolingHC2HysterRoomTemp": "cooling_hc2_hyster_room_temp",
+    # Pump rates
+    "p99PumpRateDHW": "pump_rate_dhw",
+    "p99PumpRateHC": "pump_rate_hc",
+    # Maximum flow temperatures
+    "p99DHWmaxFlowTemp": "dhw_max_flow_temp",
+    "p99HC1maxFlowTemp": "hc1_max_flow_temp",
+    # Ventilation
+    "p99FanStageParty": "fan_stage_party",
+    "p99startUnschedVent": "start_unsched_vent",
+    # Frost protection
+    "p99FrostProtectionBoost": "frost_protection_boost",
+    "p99FrostProtectionCancel": "frost_protection_cancel",
+    # Holiday mode
+    "pHolidayBeginDay": "holiday_begin_day",
+    "pHolidayBeginMonth": "holiday_begin_month",
+    "pHolidayBeginYear": "holiday_begin_year",
+    "pHolidayBeginTime": "holiday_begin_time",
+    "pHolidayEndDay": "holiday_end_day",
+    "pHolidayEndMonth": "holiday_end_month",
+    "pHolidayEndYear": "holiday_end_year",
+    "pHolidayEndTime": "holiday_end_time",
+    # Other
+    "pOvenFireplace": "oven_fireplace",
+    "party-time": "party_time",
+    # HC1 Program schedules (individual day programs)
+    "programHC1_Mo_0": "programhc1_mo_0",
+    "programHC1_Mo_1": "programhc1_mo_1",
+    "programHC1_Mo_2": "programhc1_mo_2",
+    "programHC1_Tu_0": "programhc1_tu_0",
+    "programHC1_Tu_1": "programhc1_tu_1",
+    "programHC1_Tu_2": "programhc1_tu_2",
+    "programHC1_We_0": "programhc1_we_0",
+    "programHC1_We_1": "programhc1_we_1",
+    "programHC1_We_2": "programhc1_we_2",
+    "programHC1_Th_0": "programhc1_th_0",
+    "programHC1_Th_1": "programhc1_th_1",
+    "programHC1_Th_2": "programhc1_th_2",
+    "programHC1_Fr_0": "programhc1_fr_0",
+    "programHC1_Fr_1": "programhc1_fr_1",
+    "programHC1_Fr_2": "programhc1_fr_2",
+    "programHC1_Sa_0": "programhc1_sa_0",
+    "programHC1_Sa_1": "programhc1_sa_1",
+    "programHC1_Sa_2": "programhc1_sa_2",
+    "programHC1_So_0": "programhc1_so_0",
+    "programHC1_So_1": "programhc1_so_1",
+    "programHC1_So_2": "programhc1_so_2",
+    "programHC1_Mo-Fr_0": "programhc1_mo_fr_0",
+    "programHC1_Mo-Fr_1": "programhc1_mo_fr_1",
+    "programHC1_Mo-Fr_2": "programhc1_mo_fr_2",
+    "programHC1_Sa-So_0": "programhc1_sa_so_0",
+    "programHC1_Sa-So_1": "programhc1_sa_so_1",
+    "programHC1_Sa-So_2": "programhc1_sa_so_2",
+    "programHC1_Mo-So_0": "programhc1_mo_so_0",
+    "programHC1_Mo-So_1": "programhc1_mo_so_1",
+    "programHC1_Mo-So_2": "programhc1_mo_so_2",
+    # HC2 Program schedules (individual day programs)
+    "programHC2_Mo_0": "programhc2_mo_0",
+    "programHC2_Mo_1": "programhc2_mo_1",
+    "programHC2_Mo_2": "programhc2_mo_2",
+    "programHC2_Tu_0": "programhc2_tu_0",
+    "programHC2_Tu_1": "programhc2_tu_1",
+    "programHC2_Tu_2": "programhc2_tu_2",
+    "programHC2_We_0": "programhc2_we_0",
+    "programHC2_We_1": "programhc2_we_1",
+    "programHC2_We_2": "programhc2_we_2",
+    "programHC2_Th_0": "programhc2_th_0",
+    "programHC2_Th_1": "programhc2_th_1",
+    "programHC2_Th_2": "programhc2_th_2",
+    "programHC2_Fr_0": "programhc2_fr_0",
+    "programHC2_Fr_1": "programhc2_fr_1",
+    "programHC2_Fr_2": "programhc2_fr_2",
+    "programHC2_Sa_0": "programhc2_sa_0",
+    "programHC2_Sa_1": "programhc2_sa_1",
+    "programHC2_Sa_2": "programhc2_sa_2",
+    "programHC2_So_0": "programhc2_so_0",
+    "programHC2_So_1": "programhc2_so_1",
+    "programHC2_So_2": "programhc2_so_2",
+    "programHC2_Mo-Fr_0": "programhc2_mo_fr_0",
+    "programHC2_Mo-Fr_1": "programhc2_mo_fr_1",
+    "programHC2_Mo-Fr_2": "programhc2_mo_fr_2",
+    "programHC2_Sa-So_0": "programhc2_sa_so_0",
+    "programHC2_Sa-So_1": "programhc2_sa_so_1",
+    "programHC2_Sa-So_2": "programhc2_sa_so_2",
+    "programHC2_Mo-So_0": "programhc2_mo_so_0",
+    "programHC2_Mo-So_1": "programhc2_mo_so_1",
+    "programHC2_Mo-So_2": "programhc2_mo_so_2",
+    # DHW Program schedules (individual day programs)
+    "programDHW_Mo_0": "programdhw_mo_0",
+    "programDHW_Mo_1": "programdhw_mo_1",
+    "programDHW_Mo_2": "programdhw_mo_2",
+    "programDHW_Tu_0": "programdhw_tu_0",
+    "programDHW_Tu_1": "programdhw_tu_1",
+    "programDHW_Tu_2": "programdhw_tu_2",
+    "programDHW_We_0": "programdhw_we_0",
+    "programDHW_We_1": "programdhw_we_1",
+    "programDHW_We_2": "programdhw_we_2",
+    "programDHW_Th_0": "programdhw_th_0",
+    "programDHW_Th_1": "programdhw_th_1",
+    "programDHW_Th_2": "programdhw_th_2",
+    "programDHW_Fr_0": "programdhw_fr_0",
+    "programDHW_Fr_1": "programdhw_fr_1",
+    "programDHW_Fr_2": "programdhw_fr_2",
+    "programDHW_Sa_0": "programdhw_sa_0",
+    "programDHW_Sa_1": "programdhw_sa_1",
+    "programDHW_Sa_2": "programdhw_sa_2",
+    "programDHW_So_0": "programdhw_so_0",
+    "programDHW_So_1": "programdhw_so_1",
+    "programDHW_So_2": "programdhw_so_2",
+    "programDHW_Mo-Fr_0": "programdhw_mo_fr_0",
+    "programDHW_Mo-Fr_1": "programdhw_mo_fr_1",
+    "programDHW_Mo-Fr_2": "programdhw_mo_fr_2",
+    "programDHW_Sa-So_0": "programdhw_sa_so_0",
+    "programDHW_Sa-So_1": "programdhw_sa_so_1",
+    "programDHW_Sa-So_2": "programdhw_sa_so_2",
+    "programDHW_Mo-So_0": "programdhw_mo_so_0",
+    "programDHW_Mo-So_1": "programdhw_mo_so_1",
+    "programDHW_Mo-So_2": "programdhw_mo_so_2",
+    # Fan Program schedules (individual day programs)
+    "programFan_Mo_0": "programfan_mo_0",
+    "programFan_Mo_1": "programfan_mo_1",
+    "programFan_Mo_2": "programfan_mo_2",
+    "programFan_Tu_0": "programfan_tu_0",
+    "programFan_Tu_1": "programfan_tu_1",
+    "programFan_Tu_2": "programfan_tu_2",
+    "programFan_We_0": "programfan_we_0",
+    "programFan_We_1": "programfan_we_1",
+    "programFan_We_2": "programfan_we_2",
+    "programFan_Th_0": "programfan_th_0",
+    "programFan_Th_1": "programfan_th_1",
+    "programFan_Th_2": "programfan_th_2",
+    "programFan_Fr_0": "programfan_fr_0",
+    "programFan_Fr_1": "programfan_fr_1",
+    "programFan_Fr_2": "programfan_fr_2",
+    "programFan_Sa_0": "programfan_sa_0",
+    "programFan_Sa_1": "programfan_sa_1",
+    "programFan_Sa_2": "programfan_sa_2",
+    "programFan_So_0": "programfan_so_0",
+    "programFan_So_1": "programfan_so_1",
+    "programFan_So_2": "programfan_so_2",
+    "programFan_Mo-Fr_0": "programfan_mo_fr_0",
+    "programFan_Mo-Fr_1": "programfan_mo_fr_1",
+    "programFan_Mo-Fr_2": "programfan_mo_fr_2",
+    "programFan_Sa-So_0": "programfan_sa_so_0",
+    "programFan_Sa-So_1": "programfan_sa_so_1",
+    "programFan_Sa-So_2": "programfan_sa_so_2",
+    "programFan_Mo-So_0": "programfan_mo_so_0",
+    "programFan_Mo-So_1": "programfan_mo_so_1",
+    "programFan_Mo-So_2": "programfan_mo_so_2",
 }
 
 
 def get_translation_key(entity_name: str) -> str | None:
     """Get the translation key for an entity name.
-    
+
     Args:
         entity_name: The internal entity name from write_map.
-    
+
     Returns:
         The translation key if found, otherwise None.
     """
