@@ -12,6 +12,8 @@ The integration communicates with the heat pump using the serial protocol, suppo
 
 **Origin**: This integration is based on the FHEM-Module developed by Immi, adapted for Home Assistant with modern async architecture and full UI configuration support.
 
+**V0.2 is a big release that fixes most of the known errors. A few tranlation strings are still missing and some sensor values are off either in unit or in size. I will fix that one by one.**
+
 ## Features
 
 ### Currently Implemented
@@ -22,8 +24,7 @@ The integration communicates with the heat pump using the serial protocol, suppo
 - ✅ **Switch Platform**: Control heat pump functions on/off
 - ✅ **Number Platform**: Adjust numeric settings and parameters
 - ✅ **Select Platform**: Choose between predefined options for various settings
-- ✅ **Time Platform**: Set time-based parameters
-- ✅ **Calendar Platform**: View heating schedules and programs
+- ✅ **Time Platform**: Set time-based parameters, schedules and programs
 - ✅ **Device Registry Integration**: Proper device identification in Home Assistant
 - ✅ **Automatic Polling**: Regular updates of sensor values
 - ✅ **Smart Entity Management**: Non-essential entities are hidden by default to reduce clutter
@@ -71,9 +72,9 @@ COP sensors require energy sensors to be available on your device, typically pre
 
 ### Planned Features
 
-- 🔄 Improve Schedule handling
 - 🔄 make sure all Sensor values are interpreted correctly
 - 🔄 Improve Settings for Polling Frequency from the Device
+- 🔄 create climate entities for smoother interaction
 
 ## Compatibility
 
@@ -186,6 +187,8 @@ This means you are free to use, modify, and distribute this software under the t
 ---
 
 **Credits**: Based on the FHEM-Module by Immi. Thanks to the FHEM and Home Assistant community for their support and contributions.
+
+
 
 
 
