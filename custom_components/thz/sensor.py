@@ -350,12 +350,8 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
         Returns:
             A string representing the unique ID of the sensor.
         """
-        entity_key = self._entity_name.lower().replace(' ', '_')
-        if isinstance(self._block, (bytes, bytearray)):
-            block_id = self._block.hex()
-        else:
-            block_id = str(self._block)
-        return f"thz_{block_id}_{self._offset}_{entity_key}"
+        return f"thz_{self._block}_{self._offset}_{self._entity_name.lower().replace(' ', '_')}"
+
 
     @property
     def device_info(self):
