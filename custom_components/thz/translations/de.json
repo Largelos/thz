@@ -225,13 +225,13 @@
         "name": "Jährlicher COP Gesamt"
       },
       "lifetime_cop_dhw": {
-        "name": "Lebensdauer COP Warmwasser"
+        "name": "Gesamt-COP Warmwasser"
       },
       "lifetime_cop_hc": {
-        "name": "Lebensdauer COP Heizung"
+        "name": "Gesamt-COP Heizung"
       },
       "lifetime_cop_total": {
-        "name": "Lebensdauer COP Gesamt"
+        "name": "Gesamt-COP"
       }
     },
     "number": {

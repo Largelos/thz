@@ -567,9 +567,6 @@ class THZMonthlyCOPSensor(CoordinatorEntity, SensorEntity):
         self._month_start_heat = None
         self._month_start_elec = None
         self._current_month = datetime.now().month
-        
-        # Cache for entity IDs to avoid repeated lookups
-        self._entity_cache = {}
 
         if cop_type == "DHW":
             self._attr_name = "Monthly COP DHW"
