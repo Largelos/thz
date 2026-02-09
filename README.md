@@ -101,6 +101,23 @@ To provide a cleaner initial setup experience, the following entity types are hi
    - **Network Connection**: Provide the host IP address and port
 5. Complete the setup and the integration will discover your heat pump
 
+## Advanced Topics
+
+### Using ser2net with Multiple Clients
+
+If you want to use both Home Assistant and FHEM to access the same THZ heat pump simultaneously, you can use ser2net as a TCP/IP bridge. This setup allows multiple clients to connect to the same serial device over the network.
+
+📖 **See the comprehensive guide**: [Using ser2net for Multiple Client Access](docs/ser2net-multi-client.md)
+
+The guide covers:
+- How ser2net enables multi-client access
+- Installation and configuration (modern YAML and legacy formats)
+- Home Assistant and FHEM configuration
+- Important warnings about protocol collision risks
+- Best practices and troubleshooting
+
+⚠️ **Note**: Multi-client access through ser2net is not officially supported and may have reliability issues due to protocol collisions. Single-client access is recommended for production use.
+
 ## Disclaimer
 
 **IMPORTANT**: This is an unofficial, community-developed integration and is not affiliated with, endorsed by, or supported by Stiebel Eltron or Tecalor.
