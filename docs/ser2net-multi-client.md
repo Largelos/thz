@@ -79,14 +79,16 @@ sudo pacman -S ser2net
 
 ### Checking ser2net Version
 
-Different versions of ser2net use different configuration formats:
+Different versions of ser2net use different configuration formats and have different multi-client capabilities:
 
 ```bash
 ser2net -v
 ```
 
-- **Version 3.5 or newer**: Uses YAML configuration
-- **Version 3.4 or older**: Uses legacy text-based configuration
+- **Version 3.5 or newer**: Uses YAML configuration, **supports multiple simultaneous client connections** via `max-connections` option (RECOMMENDED for multi-client use)
+- **Version 3.4 or older**: Uses legacy text-based configuration, **typically limited to ONE client connection at a time** with the `raw` state
+
+⚠️ **For simultaneous Home Assistant + FHEM access, ser2net 3.5+ is strongly recommended.**
 
 ## Configuration Examples
 
@@ -146,12 +148,20 @@ ls -l /dev/ttyUSB* /dev/ttyACM*
 
 ### Legacy ser2net (3.4 and older) Configuration
 
+⚠️ **Important Limitation**: Legacy ser2net versions (3.4 and older) with the `raw` state typically **only allow ONE client connection at a time**. For true simultaneous multi-client access (Home Assistant + FHEM), you should upgrade to **ser2net 3.5 or newer** which supports the YAML configuration format with `max-connections` option.
+
+If you're using legacy ser2net, the configuration below will work, but only one client can connect at a time. When a second client attempts to connect, it will typically be rejected or the first connection may be dropped depending on your ser2net version.
+
 For older ser2net versions, edit `/etc/ser2net.conf`:
 
 ```conf
-# ser2net.conf - Configuration for THZ heat pump multi-client access
+# ser2net.conf - Configuration for THZ heat pump
 #
 # Format: <network-port>:<state>:<timeout>:<device>:<options>
+#
+# LIMITATION: In legacy ser2net (3.4-), the 'raw' state typically allows
+# only ONE client connection at a time. For multiple simultaneous clients,
+# upgrade to ser2net 3.5+ with YAML configuration.
 #
 # network-port: TCP port to listen on
 # state: raw, rawlp, telnet, off
@@ -166,12 +176,21 @@ For older ser2net versions, edit `/etc/ser2net.conf`:
 
 **Configuration breakdown:**
 - `2323` - TCP port to listen on
-- `raw` - Raw TCP mode (no telnet protocol processing)
+- `raw` - Raw TCP mode (no telnet protocol processing) - **allows only 1 client in legacy versions**
 - `0` - No timeout (keep connections alive indefinitely)
 - `/dev/ttyUSB0` - Serial device path (adjust as needed)
 - `115200` - Baudrate (must match heat pump: 115200)
 - `8DATABITS 1STOPBIT NONE` - Serial parameters (8N1)
 - `LOCAL` - Ignore modem control lines (DCD, DTR)
+
+**Workarounds for legacy ser2net:**
+
+If you cannot upgrade to ser2net 3.5+, consider these alternatives:
+
+1. **Use time-based switching**: Configure Home Assistant and FHEM to access the heat pump at different times (never simultaneously)
+2. **Upgrade ser2net**: The recommended solution - upgrade to ser2net 3.5 or newer for true multi-client support
+3. **Use two serial ports**: If your heat pump has multiple serial interfaces, connect separate USB adapters
+4. **Choose one system**: Use either Home Assistant OR FHEM, not both simultaneously
 
 ### Starting and Enabling ser2net
 
@@ -298,6 +317,11 @@ attr myTHZ poll_interval 90
 
 ## Limitations
 
+### ser2net Version Limitations
+
+1. **Legacy ser2net (3.4 and older)**: The `raw` state typically allows **only ONE client connection at a time**. True multi-client support requires ser2net 3.5+
+2. **Upgrade required**: For simultaneous Home Assistant + FHEM access, upgrading to ser2net 3.5+ is essential
+
 ### Protocol-Level Limitations
 
 1. **No request coordination**: Clients don't know about each other's requests
@@ -360,12 +384,51 @@ sudo iptables -L -n | grep 2323
 sudo ufw status
 ```
 
+### Second Client Cannot Connect (Legacy ser2net)
+
+**Problem**: When using ser2net 3.4 or older, the second client (either Home Assistant or FHEM) cannot connect, or connecting the second client disconnects the first one.
+
+**Cause**: Legacy ser2net (version 3.4 and older) with the `raw` state typically allows only **ONE client connection at a time**. This is a fundamental limitation of the legacy configuration format.
+
+**Solutions**:
+
+1. **Upgrade to ser2net 3.5 or newer** (RECOMMENDED):
+   ```bash
+   # Check current version
+   ser2net -v
+   
+   # Upgrade on Debian/Ubuntu/Raspberry Pi OS
+   sudo apt-get update
+   sudo apt-get upgrade ser2net
+   
+   # After upgrading, convert to YAML configuration
+   # See the "Modern ser2net (3.5+) YAML Configuration" section above
+   ```
+
+2. **Use time-based switching** (workaround):
+   - Configure Home Assistant to access the heat pump during certain hours
+   - Configure FHEM to access during different hours
+   - Never run both simultaneously
+
+3. **Choose one system** (simplest):
+   - Migrate fully to either Home Assistant or FHEM
+   - Most reliable solution if ser2net upgrade is not possible
+
+4. **Verify you're actually on legacy ser2net**:
+   ```bash
+   # Check version - if 3.5+, use YAML config instead
+   ser2net -v
+   
+   # If using 3.5+, check for YAML config file
+   ls -l /etc/ser2net/ser2net.yaml
+   ```
+
 ### Timeout Errors
 
 **Problem**: Frequent timeout errors in Home Assistant or FHEM
 
 **Possible causes**:
-- Protocol collisions from simultaneous requests
+- Protocol collisions from simultaneous requests (if using ser2net 3.5+ with multi-client)
 - ser2net connection timeout set too low
 - Serial device instability
 - USB-serial adapter issues
