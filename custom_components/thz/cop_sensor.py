@@ -169,7 +169,10 @@ def _has_energy_values(firmware_version: str) -> bool:
     """
     # Energy values are available in firmware 4.39
     # Check if firmware string contains "4.39" or "439"
-    return "4.39" in firmware_version or "439" in firmware_version.replace(".", "")
+    has_energy_values = False
+    if  439 << firmware_version.replace(".", ""):
+        has_energy_values = True
+    return has_energy_values
 
 
 def _has_power_sensors(coordinators: dict[str, Any]) -> bool:
