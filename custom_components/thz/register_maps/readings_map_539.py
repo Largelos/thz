@@ -94,9 +94,10 @@ READINGS_MAP = {
         "command": "0A0648",
         "command2": "0A0649",
         "unit": "kWh",
-        "device_class": "measurement",
+        "device_class": "energy",
         "icon": "mdi:flash",
         "decode_type": "1clean",
+        "state_class": "total_increasing",
     },
     "sDewPointHC1": {
         "command": "0B0264",

@@ -214,14 +214,6 @@ class THZTime(THZBaseEntity, TimeEntity):
         self._attr_native_value = None
 
     @property
-    def name(self) -> str | None:
-        """Return the name of the time entity.
-
-        Always return the entity name since time entities don't use translation keys.
-        """
-        return self._attr_name
-
-    @property
     def native_value(self):
         """Return the native value of the time."""
         return self._attr_native_value
@@ -243,14 +235,14 @@ class THZTime(THZBaseEntity, TimeEntity):
         if not value_bytes:
             _LOGGER.warning(
                 "No data received for time %s (command %s), keeping previous value",
-                self._attr_name,
+                self.name,
                 self._command,
             )
             return
 
         num = value_bytes[0]
         self._attr_native_value = quarters_to_time(num)
-        _LOGGER.debug("Updated time %s: %s quarters -> %s", self._attr_name, num, self._attr_native_value)
+        _LOGGER.debug("Updated time %s: %s quarters -> %s", self.name, num, self._attr_native_value)
 
     async def async_set_native_value(self, value: str):
         """Set new value for the time."""
@@ -262,7 +254,7 @@ class THZTime(THZBaseEntity, TimeEntity):
             t_value = time(hour, minute)
 
         num = time_to_quarters(t_value)
-        _LOGGER.debug("Setting time %s to %s (%s quarters)", self._attr_name, t_value, num)
+        _LOGGER.debug("Setting time %s to %s (%s quarters)", self.name, t_value, num)
 
         # Write as 2 bytes to match the protocol's read format (offset=4, length=2)
         # even though only the first byte contains the meaningful time value (0-95 quarters).
