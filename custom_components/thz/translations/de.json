@@ -467,169 +467,169 @@
         "name": "Raumtemperatur Standby HK2 Sommer"
       },
       "clock_day": {
-        "name": "Clock Day"
+        "name": "Tag"
       },
       "clock_hour": {
-        "name": "Clock Hour"
+        "name": "Stunde"
       },
       "clock_minutes": {
-        "name": "Clock Minutes"
+        "name": "Minute"
       },
       "clock_month": {
-        "name": "Clock Month"
+        "name": "Monat"
       },
       "clock_year": {
-        "name": "Clock Year"
+        "name": "Jahr"
       },
       "prog_dhw_enable": {
-        "name": "DHW Program Enable"
+        "name": "Warmwasser Programm Aktivieren"
       },
       "prog_dhw_start_time": {
-        "name": "DHW Program Start Time"
+        "name": "Warmwasser Programm Startzeit"
       },
       "prog_dhw_end_time": {
-        "name": "DHW Program End Time"
+        "name": "Warmwasser Programm Endzeit"
       },
       "prog_dhw_monday": {
-        "name": "DHW Program Monday"
+        "name": "Warmwasser Programm Montag"
       },
       "prog_dhw_tuesday": {
-        "name": "DHW Program Tuesday"
+        "name": "Warmwasser Programm Dienstag"
       },
       "prog_dhw_wednesday": {
-        "name": "DHW Program Wednesday"
+        "name": "Warmwasser Programm Mittwoch"
       },
       "prog_dhw_thursday": {
-        "name": "DHW Program Thursday"
+        "name": "Warmwasser Programm Donnerstag"
       },
       "prog_dhw_friday": {
-        "name": "DHW Program Friday"
+        "name": "Warmwasser Programm Freitag"
       },
       "prog_dhw_saturday": {
-        "name": "DHW Program Saturday"
+        "name": "Warmwasser Programm Samstag"
       },
       "prog_dhw_sunday": {
-        "name": "DHW Program Sunday"
+        "name": "Warmwasser Programm Sonntag"
       },
       "prog_fan1_enable": {
-        "name": "Fan 1 Program Enable"
+        "name": "Lüfter 1 Programm Aktivieren"
       },
       "prog_fan1_start_time": {
-        "name": "Fan 1 Program Start Time"
+        "name": "Lüfter 1 Programm Startzeit"
       },
       "prog_fan1_end_time": {
-        "name": "Fan 1 Program End Time"
+        "name": "Lüfter 1 Programm Endzeit"
       },
       "prog_fan1_monday": {
-        "name": "Fan 1 Program Monday"
+        "name": "Lüfter 1 Programm Montag"
       },
       "prog_fan1_tuesday": {
-        "name": "Fan 1 Program Tuesday"
+        "name": "Lüfter 1 Programm Dienstag"
       },
       "prog_fan1_wednesday": {
-        "name": "Fan 1 Program Wednesday"
+        "name": "Lüfter 1 Programm Mittwoch"
       },
       "prog_fan1_thursday": {
-        "name": "Fan 1 Program Thursday"
+        "name": "Lüfter 1 Programm Donnerstag"
       },
       "prog_fan1_friday": {
-        "name": "Fan 1 Program Friday"
+        "name": "Lüfter 1 Programm Freitag"
       },
       "prog_fan1_saturday": {
-        "name": "Fan 1 Program Saturday"
+        "name": "Lüfter 1 Programm Samstag"
       },
       "prog_fan1_sunday": {
-        "name": "Fan 1 Program Sunday"
+        "name": "Lüfter 1 Programm Sonntag"
       },
       "prog_fan2_enable": {
-        "name": "Fan 2 Program Enable"
+        "name": "Lüfter 2 Programm Aktivieren"
       },
       "prog_fan2_start_time": {
-        "name": "Fan 2 Program Start Time"
+        "name": "Lüfter 2 Programm Startzeit"
       },
       "prog_fan2_end_time": {
-        "name": "Fan 2 Program End Time"
+        "name": "Lüfter 2 Programm Endzeit"
       },
       "prog_fan2_monday": {
-        "name": "Fan 2 Program Monday"
+        "name": "Lüfter 2 Programm Montag"
       },
       "prog_fan2_tuesday": {
-        "name": "Fan 2 Program Tuesday"
+        "name": "Lüfter 2 Programm Dienstag"
       },
       "prog_fan2_wednesday": {
-        "name": "Fan 2 Program Wednesday"
+        "name": "Lüfter 2 Programm Mittwoch"
       },
       "prog_fan2_thursday": {
-        "name": "Fan 2 Program Thursday"
+        "name": "Lüfter 2 Programm Donnerstag"
       },
       "prog_fan2_friday": {
-        "name": "Fan 2 Program Friday"
+        "name": "Lüfter 2 Programm Freitag"
       },
       "prog_fan2_saturday": {
-        "name": "Fan 2 Program Saturday"
+        "name": "Lüfter 2 Programm Samstag"
       },
       "prog_fan2_sunday": {
-        "name": "Fan 2 Program Sunday"
+        "name": "Lüfter 2 Programm Sonntag"
       },
       "prog_hc1_enable": {
-        "name": "HC1 Program Enable"
+        "name": "HC1 Programm Aktivieren"
       },
       "prog_hc1_start_time": {
-        "name": "HC1 Program Start Time"
+        "name": "HC1 Programm Startzeit"
       },
       "prog_hc1_end_time": {
-        "name": "HC1 Program End Time"
+        "name": "HC1 Programm Endzeit"
       },
       "prog_hc1_monday": {
-        "name": "HC1 Program Monday"
+        "name": "HC1 Programm Montag"
       },
       "prog_hc1_tuesday": {
-        "name": "HC1 Program Tuesday"
+        "name": "HC1 Programm Dienstag"
       },
       "prog_hc1_wednesday": {
-        "name": "HC1 Program Wednesday"
+        "name": "HC1 Programm Mittwoch"
       },
       "prog_hc1_thursday": {
-        "name": "HC1 Program Thursday"
+        "name": "HC1 Programm Donnerstag"
       },
       "prog_hc1_friday": {
-        "name": "HC1 Program Friday"
+        "name": "HC1 Programm Freitag"
       },
       "prog_hc1_saturday": {
-        "name": "HC1 Program Saturday"
+        "name": "HC1 Programm Samstag"
       },
       "prog_hc1_sunday": {
-        "name": "HC1 Program Sunday"
+        "name": "HC1 Programm Sonntag"
       },
       "prog_hc2_enable": {
-        "name": "HC2 Program Enable"
+        "name": "HC2 Programm Aktivieren"
       },
       "prog_hc2_start_time": {
-        "name": "HC2 Program Start Time"
+        "name": "HC2 Programm Startzeit"
       },
       "prog_hc2_end_time": {
-        "name": "HC2 Program End Time"
+        "name": "HC2 Programm Endzeit"
       },
       "prog_hc2_monday": {
-        "name": "HC2 Program Monday"
+        "name": "HC2 Programm Montag"
       },
       "prog_hc2_tuesday": {
-        "name": "HC2 Program Tuesday"
+        "name": "HC2 Programm Dienstag"
       },
       "prog_hc2_wednesday": {
-        "name": "HC2 Program Wednesday"
+        "name": "HC2 Programm Mittwoch"
       },
       "prog_hc2_thursday": {
-        "name": "HC2 Program Thursday"
+        "name": "HC2 Programm Donnerstag"
       },
       "prog_hc2_friday": {
-        "name": "HC2 Program Friday"
+        "name": "HC2 Programm Freitag"
       },
       "prog_hc2_saturday": {
-        "name": "HC2 Program Saturday"
+        "name": "HC2 Programm Samstag"
       },
       "prog_hc2_sunday": {
-        "name": "HC2 Program Sunday"
+        "name": "HC2 Programm Sonntag"
       },
       "cooling_hc1_hyster_flow_temp": {
         "name": "Kühlung HK1 Hysterese Vorlauftemperatur"
