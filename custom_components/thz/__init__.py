@@ -8,7 +8,12 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -157,7 +162,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
 async def _async_setup_services(hass: HomeAssistant) -> None:
     """Set up services for the THZ integration.
-    
+
     Registers the read_raw_register service that allows users to read
     raw register data from the heatpump for debugging purposes.
     This function is idempotent and will only register services once.
@@ -168,18 +173,18 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
 
     async def _async_handle_read_raw_register(call: ServiceCall) -> ServiceResponse:
         """Handle the read_raw_register service call.
-        
+
         This service reads a raw register/block from the heatpump and returns
         the hex dump. It's useful for debugging firmware-specific register issues.
-        
+
         Args:
             call: The service call with command field containing hex string
-            
+
         Returns:
             ServiceResponse dict with command, length, hex, and formatted fields
         """
         command_str = call.data.get("command", "").strip().upper()
-        
+
         # Validate hex string
         try:
             command_bytes = bytes.fromhex(command_str)
@@ -202,7 +207,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "error": error_msg,
                 "command": command_str,
             }
-        
+
         # Get the device from hass.data
         device = hass.data[DOMAIN].get("device")
         if not device:
@@ -223,7 +228,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "error": error_msg,
                 "command": command_str,
             }
-        
+
         # Read the register with device lock
         try:
             _LOGGER.info("Reading raw register: %s", command_str)
@@ -231,7 +236,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 data = await hass.async_add_executor_job(
                     device.read_block, command_bytes, "get"
                 )
-            
+
             # Format the hex dump with offsets (16 bytes per line)
             formatted_lines = []
             for i in range(0, len(data), 16):
@@ -239,9 +244,9 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 hex_str = " ".join(f"{b:02x}" for b in chunk)
                 formatted_lines.append(f"  {i:04x}: {hex_str}")
             formatted = "\n".join(formatted_lines)
-            
+
             hex_string = data.hex()
-            
+
             # Log the result
             _LOGGER.info(
                 "Raw register %s read successfully (%d bytes):\n%s",
@@ -249,7 +254,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 len(data),
                 formatted
             )
-            
+
             # Create persistent notification with the result
             notification_message = (
                 f"Command: {command_str}\n"
@@ -257,7 +262,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 f"Hex: {hex_string}\n\n"
                 f"Formatted:\n{formatted}"
             )
-            
+
             await hass.services.async_call(
                 "persistent_notification",
                 "create",
@@ -268,7 +273,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 },
                 blocking=True,
             )
-            
+
             # Return service response
             return {
                 "success": True,
@@ -277,7 +282,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "hex": hex_string,
                 "formatted": formatted,
             }
-            
+
         except Exception as err:
             error_msg = f"Error reading register {command_str}: {err}"
             _LOGGER.error(error_msg, exc_info=True)
@@ -296,7 +301,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "error": str(err),
                 "command": command_str,
             }
-    
+
     # Register the service
     hass.services.async_register(
         DOMAIN,
@@ -398,7 +403,10 @@ async def _async_update_block(hass: HomeAssistant, device: THZDevice, block_name
     try:
         _LOGGER.debug("Reading block %s", block_name)
         async with device.lock:
-            return await hass.async_add_executor_job(device.read_block, block_bytes, "get")
+            result = await hass.async_add_executor_job(
+                device.read_block, block_bytes, "get"
+            )
+            return result
     except Exception as err:
         raise UpdateFailed(f"Error reading {block_name}: {err}") from err
 
@@ -416,7 +424,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if device:
                 await hass.async_add_executor_job(device.close)
         hass.data[DOMAIN].pop(entry.entry_id)
-        
+
         # Remove services if this is the last config entry
         remaining_entries = [
             e for e in hass.config_entries.async_entries(DOMAIN)
@@ -425,7 +433,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not remaining_entries:
             _LOGGER.debug("Removing THZ services (last config entry)")
             hass.services.async_remove(DOMAIN, "read_raw_register")
-    
+
     return unload_ok
 
 
