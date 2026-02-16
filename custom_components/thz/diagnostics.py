@@ -82,4 +82,17 @@ async def async_get_config_entry_diagnostics(
         "registers": register_counts,
     }
 
+    # Add raw block hex dumps from all coordinator data
+    raw_block_data = {}
+    for block_name, coordinator in coordinators.items():
+        if coordinator.data:
+            raw_block_data[block_name] = {
+                "hex": coordinator.data.hex(),
+                "length": len(coordinator.data),
+            }
+        else:
+            raw_block_data[block_name] = {"hex": None, "length": 0}
+
+    diagnostics_data["raw_blocks"] = raw_block_data
+
     return diagnostics_data
