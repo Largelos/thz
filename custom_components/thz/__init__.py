@@ -23,6 +23,9 @@ from .thz_device import THZDevice
 
 _LOGGER = logging.getLogger(__name__)
 
+# Hex dump formatting constants
+BYTES_PER_HEX_LINE = 16  # Number of bytes to display per line in hex dumps
+
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up THZ from config entry."""
@@ -237,10 +240,10 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                     device.read_block, command_bytes, "get"
                 )
 
-            # Format the hex dump with offsets (16 bytes per line)
+            # Format the hex dump with offsets (BYTES_PER_HEX_LINE bytes per line)
             formatted_lines = []
-            for i in range(0, len(data), 16):
-                chunk = data[i:i+16]
+            for i in range(0, len(data), BYTES_PER_HEX_LINE):
+                chunk = data[i : i + BYTES_PER_HEX_LINE]
                 hex_str = " ".join(f"{b:02x}" for b in chunk)
                 formatted_lines.append(f"  {i:04x}: {hex_str}")
             formatted = "\n".join(formatted_lines)
