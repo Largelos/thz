@@ -195,7 +195,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             error_msg = f"Invalid hex command: {command_str} - {err}"
             _LOGGER.error(error_msg)
             # Create persistent notification for the error
-            hass.services.call(
+            await hass.services.async_call(
                 "persistent_notification",
                 "create",
                 {
@@ -216,7 +216,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
         if not device:
             error_msg = "THZ device not initialized"
             _LOGGER.error(error_msg)
-            hass.services.call(
+            await hass.services.async_call(
                 "persistent_notification",
                 "create",
                 {
