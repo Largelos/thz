@@ -7,6 +7,55 @@
         "data": {
           "connection_type": "Verbindungstyp"
         }
+      },
+      "reconfigure": {
+        "title": "THZ-Integration neu konfigurieren",
+        "description": "Aktualisieren Sie Ihre THZ-Integrationseinstellungen. Sie können Verbindungsparameter, Gerätename, Bereich und Abfrageintervalle ändern.",
+        "data": {
+          "device": "Serielles Gerät",
+          "host": "Host",
+          "port": "Port",
+          "Baudrate": "Baudrate",
+          "alias": "Gerätename",
+          "area": "Bereich",
+          "write_interval": "Schreibintervall (Sekunden)"
+        }
+      },
+      "setup_ip": {
+        "title": "Netzwerkverbindung einrichten",
+        "description": "Konfigurieren Sie die Netzwerkverbindung zu Ihrer THZ-Wärmepumpe. Geben Sie die IP-Adresse oder den Hostnamen Ihres ser2net-Servers und die Portnummer ein (Standard: 2217).",
+        "data": {
+          "host": "IP-Adresse oder Hostname",
+          "port": "Port",
+          "connection_type": "Verbindungstyp"
+        }
+      },
+      "setup_usb": {
+        "title": "USB / Serielle Verbindung einrichten",
+        "description": "Konfigurieren Sie die USB- oder serielle Verbindung zu Ihrer THZ-Wärmepumpe. Wählen Sie das serielle Gerät aus dem Dropdown-Menü und legen Sie die Baudrate fest (Standard: 115200).",
+        "data": {
+          "device": "Serielles Gerät",
+          "connection_type": "Verbindungstyp",
+          "Baudrate": "Baudrate"
+        }
+      },
+      "name": {
+        "title": "Gerätename und Bereich",
+        "description": "Geben Sie Ihrem THZ-Gerät optional einen benutzerdefinierten Namen und weisen Sie es einem Home Assistant-Bereich zu. Dies hilft, Ihre Geräte in der Benutzeroberfläche zu organisieren.",
+        "data": {
+          "alias": "Gerätename (optional)",
+          "area": "Bereich (optional)"
+        }
+      },
+      "refresh_blocks": {
+        "title": "Abfrageintervalle konfigurieren",
+        "description": "Legen Sie fest, wie oft (in Sekunden) jeder Registerblock von Ihrer Wärmepumpe abgefragt werden soll. Niedrigere Werte liefern schnellere Aktualisierungen, erhöhen aber die Systemlast. Das write_interval steuert, wie oft beschreibbare Entitäten (Nummer/Schalter/Auswahl/Zeit) nach Änderungen aktualisiert werden.\n\nEmpfohlen: 300-600 Sekunden für Leseblöcke, 60 Sekunden für Schreibintervall.",
+        "data": {
+          "write_interval": "Schreibintervall (Sekunden)"
+        },
+        "data_description": {
+          "write_interval": "Wie oft beschreibbare Entitäten ihren Status synchronisieren (5-86400 Sekunden)"
+        }
       }
     },
     "abort": {
@@ -17,8 +66,8 @@
       "reconfigured": "Die THZ-Integration wurde erfolgreich neu konfiguriert."
     },
     "error": {
-      "invalid_host": "Invalid IP address or hostname. Please enter a valid IPv4, IPv6 address, or hostname.",
-      "invalid_port": "Invalid port number. Port must be between 1 and 65535."
+      "invalid_host": "Ungültige IP-Adresse oder Hostname. Bitte geben Sie eine gültige IPv4-, IPv6-Adresse oder einen Hostnamen ein.",
+      "invalid_port": "Ungültige Portnummer. Port muss zwischen 1 und 65535 liegen."
     }
   },
   "entity": {
