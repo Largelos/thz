@@ -102,27 +102,6 @@ For ser2net version 3.5 and newer, create or edit `/etc/ser2net/ser2net.yaml`:
 # ser2net configuration for THZ heat pump
 # Allows multiple clients (Home Assistant + FHEM) to access serial device
 
-define: &banner "\r\nser2net port \p device \d [\s]\r\n\r\n"
-
-connection: &thz-connection
-  accepter: tcp,2323
-  enable: on
-  options:
-    banner: *banner
-    kickolduser: true
-    telnet-brk-on-sync: true
-  connector: serialdev,
-            /dev/ttyUSB0,
-            115200n81,
-            local
-
-  # Connection parameters
-  timeout: 0        # No timeout - keep connection alive
-  max-connections: 2  # Allow HA + FHEM to connect
-
-%YAML 1.1
----
-# Define the connection
 connection: &thz
   accepter: tcp,2323
   enable: on
@@ -134,12 +113,15 @@ connection: &thz
 
 **Configuration breakdown:**
 - `accepter: tcp,2323` - Listen on TCP port 2323
-- `/dev/ttyUSB0` - Your serial device path (adjust as needed)
-- `115200n81` - Baudrate 115200, 8 data bits, no parity, 1 stop bit
-- `local` - Ignore modem control lines
-- `kickolduser: true` - Disconnect old connection when new one arrives
+- `enable: on` - Enable this connection
+- `kickolduser: true` - Disconnect old connection when new one arrives (allows reconnection)
+- `connector: serialdev,/dev/ttyUSB0,115200n81,local` - Serial device configuration
+  - `/dev/ttyUSB0` - Serial device path (adjust as needed)
+  - `115200n81` - Baudrate 115200, 8 data bits, no parity, 1 stop bit
+  - `local` - Ignore modem control lines
 - `timeout: 0` - No timeout, keep connections alive
-- `max-connections: 2` - Allow up to 2 simultaneous clients
+
+**Note**: Modern ser2net (3.5+) supports multiple simultaneous connections by default. The `kickolduser: true` option allows reconnection but doesn't limit to single client. For explicit multi-client control, you can add additional options (consult ser2net 3.5+ documentation for advanced settings).
 
 **Important**: Adjust `/dev/ttyUSB0` to match your actual device. Find it with:
 ```bash
