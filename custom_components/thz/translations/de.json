@@ -177,11 +177,11 @@
       "dew_point": {
         "name": "Taupunkt"
       },
-      "power_nd": {
-        "name": "Leistung Nd"
+      "pressure_nd": {
+        "name": "Druck Niederdruckseite"
       },
-      "power_hd": {
-        "name": "Leistung Hd"
+      "pressure_hd": {
+        "name": "Druck Hochdruckseite"
       },
       "actual_power_qc": {
         "name": "Aktuelle Leistung Qc"
@@ -838,6 +838,9 @@
       },
       "start_unsched_vent": {
         "name": "Ungeplante Lüftung starten"
+      },
+      "party_time": {
+        "name": "Party Zeit"
       }
     },
     "select": {
@@ -859,9 +862,6 @@
       },
       "holiday_end_time": {
         "name": "Urlaubsende Zeit"
-      },
-      "party_time": {
-        "name": "Party Zeit"
       },
       "programhc1_mo_0": {
         "name": "HK1 Programm Montag 1"

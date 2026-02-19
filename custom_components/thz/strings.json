@@ -177,11 +177,11 @@
       "dew_point": {
         "name": "Dew Point"
       },
-      "power_nd": {
-        "name": "Power Nd"
+      "pressure_nd": {
+        "name": "Pressure Nd"
       },
-      "power_hd": {
-        "name": "Power Hd"
+      "pressure_hd": {
+        "name": "Pressure Hd"
       },
       "actual_power_qc": {
         "name": "Actual Power Qc"
@@ -799,6 +799,9 @@
       },
       "start_unsched_vent": {
         "name": "Start Unscheduled Ventilation"
+      },
+      "party_time": {
+        "name": "Party Time"
       }
     },
     "select": {
@@ -820,9 +823,6 @@
       },
       "holiday_end_time": {
         "name": "Holiday End Time"
-      },
-      "party_time": {
-        "name": "Party Time"
       },
       "programhc1_mo_0": {
         "name": "HC1 Program Monday 1"
