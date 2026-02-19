@@ -656,6 +656,18 @@ class THZMonthlyCOPSensor(CoordinatorEntity, SensorEntity):
             "current_month": self._current_month,
         }
 
+    def _get_sensor_value(self, sensor_name: str) -> float | None:
+        """Get the current value of a sensor by name."""
+        for state in self.hass.states.async_all():
+            if state.domain == "sensor" and state.entity_id.endswith(
+                sensor_name.lower()
+            ):
+                try:
+                    return float(state.state)
+                except (ValueError, TypeError):
+                    return None
+        return None
+
 # PLACEHOLDER
 # PLACEHOLDER
 # PLACEHOLDER
