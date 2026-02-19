@@ -168,7 +168,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_DEVICE, default=ports[0]): vol.In(ports),
+                vol.Required(CONF_DEVICE, default=next(iter(ports))): vol.In(ports),
                 vol.Required(CONF_CONNECTION_TYPE, default=CONNECTION_USB): vol.In(
                     [CONNECTION_USB]
                 ),
@@ -243,7 +243,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ports = await self.get_ports()
             schema_dict[vol.Required(
                 CONF_DEVICE,
-                default=defaults.get(CONF_DEVICE, ports[0] if ports else "/dev/ttyUSB0"),
+                default=defaults.get(CONF_DEVICE, next(iter(ports)) if ports else "/dev/ttyUSB0"),
             )] = vol.In(ports) if ports else str
             schema_dict[vol.Required(
                 "Baudrate",
@@ -285,14 +285,66 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return vol.Schema(schema_dict)
 
-    async def get_ports(self) -> list[str]:
-        """Get available serial ports."""
-        ports = await self.hass.async_add_executor_job(serial.tools.list_ports.comports)
-        if ports:
-            ports = [p.device for p in ports]  # Extract only the device path
-        else:
-            ports = ["/dev/ttyUSB0", "/dev/ttyACM0", "/dev/ttyAMA0"]
-        return ports
+    async def get_ports(self) -> dict[str, str]:
+        """Get available serial ports as {stored_path: display_label} mapping.
+
+        Returns a dictionary where:
+        - Keys are stable paths for storage (by-id path if available, otherwise device path)
+        - Values are human-readable labels showing both description and device path
+        """
+        return await self.hass.async_add_executor_job(self._list_serial_ports)
+
+    @staticmethod
+    def _list_serial_ports() -> dict[str, str]:
+        """List serial ports with stable by-id paths where available.
+
+        Returns:
+            Dict mapping stable device paths to display labels.
+        """
+        import os
+
+        ports_info = serial.tools.list_ports.comports()
+        if not ports_info:
+            return {
+                "/dev/ttyUSB0": "/dev/ttyUSB0",
+                "/dev/ttyACM0": "/dev/ttyACM0",
+                "/dev/ttyAMA0": "/dev/ttyAMA0",
+            }
+
+        result = {}
+        by_id_dir = "/dev/serial/by-id"
+        for p in ports_info:
+            by_id_path = None
+            try:
+                if os.path.isdir(by_id_dir):
+                    real_device = os.path.realpath(p.device)
+                    for name in os.listdir(by_id_dir):
+                        symlink = os.path.join(by_id_dir, name)
+                        try:
+                            if os.path.realpath(symlink) == real_device:
+                                by_id_path = symlink
+                                break
+                        except OSError:
+                            continue
+            except OSError:
+                pass
+
+            # Build display label showing description and device path
+            desc = p.description
+            if desc and desc != p.device:
+                label = f"{desc} ({p.device})"
+            else:
+                label = p.device
+
+            if by_id_path:
+                label = f"{label} [{os.path.basename(by_id_path)}]"
+                stored = by_id_path
+            else:
+                stored = p.device
+
+            result[stored] = label
+
+        return result
 
     async def async_step_detect_blocks(
         self, user_input=None
