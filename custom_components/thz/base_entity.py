@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.entity import Entity
 
@@ -116,6 +116,18 @@ class THZBaseEntity(Entity):
     def entity_registry_enabled_default(self) -> bool:
         """Return if the entity should be enabled when first added to the registry."""
         return self._attr_entity_registry_enabled_default
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return extra state attributes including register information.
+
+        Returns:
+            A dictionary containing register metadata for this entity,
+            visible as attributes in the Home Assistant UI.
+        """
+        return {
+            "register_command": self._command,
+        }
 
     @property
     def device_info(self):
