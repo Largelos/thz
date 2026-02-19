@@ -164,11 +164,11 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.connection_data = user_input
             return await self.async_step_name()
 
-        ports = await self.get_ports()
+        ports, default_device = await self.get_ports()
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_DEVICE, default=next(iter(ports))): vol.In(ports),
+                vol.Required(CONF_DEVICE, default=default_device): vol.In(ports),
                 vol.Required(CONF_CONNECTION_TYPE, default=CONNECTION_USB): vol.In(
                     [CONNECTION_USB]
                 ),
@@ -240,10 +240,11 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # Connection-specific fields
         if conn_type == CONNECTION_USB:
-            ports = await self.get_ports()
+            stored_device = defaults.get(CONF_DEVICE)
+            ports, default_device = await self.get_ports(stored_device)
             schema_dict[vol.Required(
                 CONF_DEVICE,
-                default=defaults.get(CONF_DEVICE, next(iter(ports)) if ports else "/dev/ttyUSB0"),
+                default=default_device,
             )] = vol.In(ports) if ports else str
             schema_dict[vol.Required(
                 "Baudrate",
@@ -285,49 +286,76 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return vol.Schema(schema_dict)
 
-    async def get_ports(self) -> dict[str, str]:
-        """Get available serial ports as {stored_path: display_label} mapping.
+    async def get_ports(
+        self, current_device: str | None = None
+    ) -> tuple[dict[str, str], str]:
+        """Get available serial ports as ({stored_path: display_label}, canonical_default).
 
-        Returns a dictionary where:
-        - Keys are stable paths for storage (by-id path if available, otherwise device path)
-        - Values are human-readable labels showing both description and device path
-        """
-        return await self.hass.async_add_executor_job(self._list_serial_ports)
-
-    @staticmethod
-    def _list_serial_ports() -> dict[str, str]:
-        """List serial ports with stable by-id paths where available.
+        Args:
+            current_device: Currently stored device path (e.g. from an existing config
+                entry). Used to resolve backward-compat /dev/ttyUSBX paths to their
+                stable by-id equivalent, and to ensure the path remains selectable even
+                if the device is temporarily disconnected.
 
         Returns:
-            Dict mapping stable device paths to display labels.
+            Tuple of (ports_dict, canonical_default) where ports_dict maps stable paths
+            to human-readable labels, and canonical_default is the key to preselect.
+        """
+        return await self.hass.async_add_executor_job(self._list_serial_ports, current_device)
+
+    @staticmethod
+    def _list_serial_ports(
+        current_device: str | None = None,
+    ) -> tuple[dict[str, str], str]:
+        """List serial ports with stable by-id paths where available.
+
+        Builds a single realpath→by-id lookup map in one pass, then resolves each
+        detected port. When current_device is supplied, resolves it to its canonical
+        key (upgrading a stored /dev/ttyUSBX to its by-id equivalent if one exists),
+        and adds it to the result dict if the device is currently disconnected so the
+        reconfigure form can still display it.
+
+        Args:
+            current_device: Currently stored device path for backward-compat resolution.
+
+        Returns:
+            Tuple of (ports_dict, canonical_default).
         """
         import os
 
         ports_info = serial.tools.list_ports.comports()
         if not ports_info:
-            return {
+            fallback = {
                 "/dev/ttyUSB0": "/dev/ttyUSB0",
                 "/dev/ttyACM0": "/dev/ttyACM0",
                 "/dev/ttyAMA0": "/dev/ttyAMA0",
             }
+            if current_device and current_device not in fallback:
+                fallback[current_device] = current_device
+            canonical = current_device if current_device else "/dev/ttyUSB0"
+            return fallback, canonical
 
-        result = {}
+        # Build a single realpath→by-id lookup map in one pass
+        by_id_map: dict[str, str] = {}  # realpath → full by-id symlink path
         by_id_dir = "/dev/serial/by-id"
+        try:
+            if os.path.isdir(by_id_dir):
+                for name in os.listdir(by_id_dir):
+                    symlink = os.path.join(by_id_dir, name)
+                    try:
+                        by_id_map[os.path.realpath(symlink)] = symlink
+                    except OSError:
+                        pass
+        except OSError:
+            pass
+
+        result: dict[str, str] = {}
         for p in ports_info:
-            by_id_path = None
             try:
-                if os.path.isdir(by_id_dir):
-                    real_device = os.path.realpath(p.device)
-                    for name in os.listdir(by_id_dir):
-                        symlink = os.path.join(by_id_dir, name)
-                        try:
-                            if os.path.realpath(symlink) == real_device:
-                                by_id_path = symlink
-                                break
-                        except OSError:
-                            continue
+                real_device = os.path.realpath(p.device)
             except OSError:
-                pass
+                real_device = p.device
+            by_id_path = by_id_map.get(real_device)
 
             # Build display label showing description and device path
             desc = p.description
@@ -344,7 +372,34 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             result[stored] = label
 
-        return result
+        # Resolve current_device to its canonical key (backward compat)
+        canonical: str | None = None
+        if current_device:
+            if current_device in result:
+                canonical = current_device
+            else:
+                # Try realpath comparison to upgrade /dev/ttyUSBX → by-id key
+                try:
+                    current_real = os.path.realpath(current_device)
+                    for key in result:
+                        try:
+                            if os.path.realpath(key) == current_real:
+                                canonical = key  # Upgrade to by-id
+                                break
+                        except OSError:
+                            continue
+                except OSError:
+                    pass
+
+                if canonical is None:
+                    # Device not currently connected; keep it selectable
+                    result[current_device] = current_device
+                    canonical = current_device
+
+        if canonical is None:
+            canonical = next(iter(result))
+
+        return result, canonical
 
     async def async_step_detect_blocks(
         self, user_input=None
