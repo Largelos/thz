@@ -18,49 +18,49 @@ REGISTER_MAP = {
     "firmware": "539",
     # Flow and measurement sensors
     "pxx0A033B": [
-        ("sFlowRate:", 4, 4, "1clean", 1),
+        ("sFlowRate:", 8, 4, "hex2int", 1),
     ],
     "pxx0A064F": [
-        ("sHumMaskingTime:", 4, 4, "1clean", 1),
+        ("sHumMaskingTime:", 8, 4, "hex2int", 1),
     ],
     "pxx0A0650": [
-        ("sHumThreshold:", 4, 4, "1clean", 1),
+        ("sHumThreshold:", 8, 4, "hex2int", 1),
     ],
     "pxx0A069A": [
-        ("sHeatingRelPower:", 4, 4, "1clean", 1),
+        ("sHeatingRelPower:", 8, 4, "hex2int", 1),
     ],
     "pxx0A069B": [
-        ("sComprRelPower:", 4, 4, "1clean", 1),
+        ("sComprRelPower:", 8, 4, "hex2int", 1),
     ],
     "pxx0A069C": [
-        ("sComprRotUnlimit:", 4, 4, "1clean", 1),
+        ("sComprRotUnlimit:", 8, 4, "hex2int", 1),
     ],
     "pxx0A069D": [
-        ("sComprRotLimit:", 4, 4, "1clean", 1),
+        ("sComprRotLimit:", 8, 4, "hex2int", 1),
     ],
     "pxx0A06A4": [
-        ("sOutputReduction:", 4, 4, "1clean", 1),
+        ("sOutputReduction:", 8, 4, "hex2int", 1),
     ],
     "pxx0A06A5": [
-        ("sOutputIncrease:", 4, 4, "1clean", 1),
+        ("sOutputIncrease:", 8, 4, "hex2int", 1),
     ],
     "pxx0A09D1": [
-        ("sHumProtection:", 4, 4, "1clean", 1),
+        ("sHumProtection:", 8, 4, "hex2int", 1),
     ],
     "pxx0A09D2": [
-        ("sSetHumidityMin:", 4, 4, "1clean", 1),
+        ("sSetHumidityMin:", 8, 4, "hex2int", 1),
     ],
     "pxx0A09D3": [
-        ("sSetHumidityMax:", 4, 4, "1clean", 1),
+        ("sSetHumidityMax:", 8, 4, "hex2int", 1),
     ],
     "pxx0A0648": [
-        ("sCoolHCTotal:", 4, 4, "1clean", 1),
+        ("sCoolHCTotal:", 8, 4, "hex2int", 1),
     ],
     # Temperature sensors (dew point)
     "pxx0B0264": [
-        ("sDewPointHC1:", 4, 4, "5temp", 1),
+        ("sDewPointHC1:", 8, 4, "hex2int", 10),
     ],
     "pxx0C0264": [
-        ("sDewPointHC2:", 4, 4, "5temp", 1),
+        ("sDewPointHC2:", 8, 4, "hex2int", 10),
     ],
 }

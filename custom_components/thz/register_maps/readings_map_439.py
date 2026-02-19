@@ -18,42 +18,42 @@ REGISTER_MAP = {
     "firmware": "439",
     # Energy and statistics sensors (0A prefix commands)
     "pxx0A0924": [
-        ("sBoostDHWTotal:", 4, 4, "1clean", 1),
+        ("sBoostDHWTotal:", 8, 4, "hex2int", 1),
     ],
     "pxx0A0928": [
-        ("sBoostHCTotal:", 4, 4, "1clean", 1),
+        ("sBoostHCTotal:", 8, 4, "hex2int", 1),
     ],
     "pxx0A03AE": [
-        ("sHeatRecoveredDay:", 4, 4, "1clean", 1),
+        ("sHeatRecoveredDay:", 8, 4, "hex2int", 1),
     ],
     "pxx0A03B0": [
-        ("sHeatRecoveredTotal:", 4, 4, "1clean", 1),
+        ("sHeatRecoveredTotal:", 8, 4, "hex2int", 1),
     ],
     "pxx0A092A": [
-        ("sHeatDHWDay:", 4, 4, "1clean", 1),
+        ("sHeatDHWDay:", 8, 4, "hex2int", 1),
     ],
     "pxx0A092C": [
-        ("sHeatDHWTotal:", 4, 4, "1clean", 1),
+        ("sHeatDHWTotal:", 8, 4, "hex2int", 1),
     ],
     "pxx0A092E": [
-        ("sHeatHCDay:", 4, 4, "1clean", 1),
+        ("sHeatHCDay:", 8, 4, "hex2int", 1),
     ],
     "pxx0A0930": [
-        ("sHeatHCTotal:", 4, 4, "1clean", 1),
+        ("sHeatHCTotal:", 8, 4, "hex2int", 1),
     ],
     "pxx0A091A": [
-        ("sElectrDHWDay:", 4, 4, "1clean", 1),
+        ("sElectrDHWDay:", 8, 4, "hex2int", 1),
     ],
     "pxx0A091C": [
-        ("sElectrDHWTotal:", 4, 4, "1clean", 1),
+        ("sElectrDHWTotal:", 8, 4, "hex2int", 1),
     ],
     "pxx0A091E": [
-        ("sElectrHCDay:", 4, 4, "1clean", 1),
+        ("sElectrHCDay:", 8, 4, "hex2int", 1),
     ],
     "pxx0A0920": [
-        ("sElectrHCTotal:", 4, 4, "1clean", 1),
+        ("sElectrHCTotal:", 8, 4, "hex2int", 1),
     ],
     "pxx0A05D1": [
-        ("party-time:", 4, 4, "8party", 1),
+        ("party-time:", 8, 4, "8party", 1),
     ],
 }
