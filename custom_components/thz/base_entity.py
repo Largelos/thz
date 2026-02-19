@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.entity import Entity
 
@@ -118,7 +118,7 @@ class THZBaseEntity(Entity):
         return self._attr_entity_registry_enabled_default
 
     @property
-    def extra_state_attributes(self) -> dict:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes including register information.
 
         Returns:

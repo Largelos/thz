@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import struct
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -354,7 +355,7 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
 
 
     @property
-    def extra_state_attributes(self) -> dict:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes including register information.
 
         Returns:
