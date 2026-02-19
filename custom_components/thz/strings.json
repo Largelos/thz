@@ -242,6 +242,84 @@
       },
       "hc_booster_stage": {
         "name": "Heating Circuit Booster Stage"
+      },
+      "boost_dhw_total": {
+        "name": "Boost DHW Total"
+      },
+      "boost_hc_total": {
+        "name": "Boost Heating Total"
+      },
+      "heat_recovered_day": {
+        "name": "Heat Recovered Daily"
+      },
+      "heat_recovered_total": {
+        "name": "Heat Recovered Total"
+      },
+      "heat_dhw_day": {
+        "name": "DHW Heat Daily"
+      },
+      "heat_dhw_total": {
+        "name": "DHW Heat Total"
+      },
+      "heat_hc_day": {
+        "name": "Heating Circuit Heat Daily"
+      },
+      "heat_hc_total": {
+        "name": "Heating Circuit Heat Total"
+      },
+      "electr_dhw_day": {
+        "name": "DHW Electricity Daily"
+      },
+      "electr_dhw_total": {
+        "name": "DHW Electricity Total"
+      },
+      "electr_hc_day": {
+        "name": "Heating Circuit Electricity Daily"
+      },
+      "electr_hc_total": {
+        "name": "Heating Circuit Electricity Total"
+      },
+      "hum_masking_time": {
+        "name": "Humidity Masking Time"
+      },
+      "hum_threshold": {
+        "name": "Humidity Threshold"
+      },
+      "heating_rel_power": {
+        "name": "Heating Relative Power"
+      },
+      "compr_rel_power": {
+        "name": "Compressor Relative Power"
+      },
+      "compr_rot_unlimit": {
+        "name": "Compressor Rotation Unlimited"
+      },
+      "compr_rot_limit": {
+        "name": "Compressor Rotation Limit"
+      },
+      "output_reduction": {
+        "name": "Output Reduction"
+      },
+      "output_increase": {
+        "name": "Output Increase"
+      },
+      "hum_protection": {
+        "name": "Humidity Protection"
+      },
+      "set_humidity_min": {
+        "name": "Humidity Setpoint Min"
+      },
+      "set_humidity_max": {
+        "name": "Humidity Setpoint Max"
+      },
+      "cool_hc_total": {
+        "name": "Cooling Heating Circuit Total"
+      },
+      "dew_point_hc1": {
+        "name": "Dew Point HC1"
+      },
+      "dew_point_hc2": {
+        "name": "Dew Point HC2"
       }
     },
     "number": {

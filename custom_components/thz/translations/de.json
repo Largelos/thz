@@ -243,6 +243,84 @@
       "hc_booster_stage": {
         "name": "Heizkreis Zusatzheizung Stufe"
       },
+      "boost_dhw_total": {
+        "name": "Warmwasser Zusatzheizung Gesamt"
+      },
+      "boost_hc_total": {
+        "name": "Heizkreis Zusatzheizung Gesamt"
+      },
+      "heat_recovered_day": {
+        "name": "Wärmerückgewinnung Tag"
+      },
+      "heat_recovered_total": {
+        "name": "Wärmerückgewinnung Gesamt"
+      },
+      "heat_dhw_day": {
+        "name": "Warmwasser Wärme Tag"
+      },
+      "heat_dhw_total": {
+        "name": "Warmwasser Wärme Gesamt"
+      },
+      "heat_hc_day": {
+        "name": "Heizkreis Wärme Tag"
+      },
+      "heat_hc_total": {
+        "name": "Heizkreis Wärme Gesamt"
+      },
+      "electr_dhw_day": {
+        "name": "Warmwasser Strom Tag"
+      },
+      "electr_dhw_total": {
+        "name": "Warmwasser Strom Gesamt"
+      },
+      "electr_hc_day": {
+        "name": "Heizkreis Strom Tag"
+      },
+      "electr_hc_total": {
+        "name": "Heizkreis Strom Gesamt"
+      },
+      "hum_masking_time": {
+        "name": "Feuchte Maskierungszeit"
+      },
+      "hum_threshold": {
+        "name": "Feuchte Schwellenwert"
+      },
+      "heating_rel_power": {
+        "name": "Heizung relative Leistung"
+      },
+      "compr_rel_power": {
+        "name": "Kompressor relative Leistung"
+      },
+      "compr_rot_unlimit": {
+        "name": "Kompressor Drehzahl unbegrenzt"
+      },
+      "compr_rot_limit": {
+        "name": "Kompressor Drehzahl Limit"
+      },
+      "output_reduction": {
+        "name": "Leistungsreduzierung"
+      },
+      "output_increase": {
+        "name": "Leistungserhöhung"
+      },
+      "hum_protection": {
+        "name": "Feuchteschutz"
+      },
+      "set_humidity_min": {
+        "name": "Feuchte Sollwert Min"
+      },
+      "set_humidity_max": {
+        "name": "Feuchte Sollwert Max"
+      },
+      "cool_hc_total": {
+        "name": "Kühlen Heizkreis Gesamt"
+      },
+      "dew_point_hc1": {
+        "name": "Taupunkt HK1"
+      },
+      "dew_point_hc2": {
+        "name": "Taupunkt HK2"
+      },
       "current_cop": {
         "name": "Aktueller COP"
       },
