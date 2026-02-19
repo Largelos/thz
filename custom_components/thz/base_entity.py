@@ -118,6 +118,18 @@ class THZBaseEntity(Entity):
         return self._attr_entity_registry_enabled_default
 
     @property
+    def extra_state_attributes(self) -> dict:
+        """Return extra state attributes including register information.
+
+        Returns:
+            A dictionary containing register metadata for this entity,
+            visible as attributes in the Home Assistant UI.
+        """
+        return {
+            "register_command": self._command,
+        }
+
+    @property
     def device_info(self):
         """Return device information to link this entity with the device."""
         return {

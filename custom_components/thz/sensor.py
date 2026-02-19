@@ -354,6 +354,22 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
 
 
     @property
+    def extra_state_attributes(self) -> dict:
+        """Return extra state attributes including register information.
+
+        Returns:
+            A dictionary containing register metadata for this sensor,
+            visible as attributes in the Home Assistant UI.
+        """
+        return {
+            "register_block": "pxx" + self._block.hex().upper(),
+            "register_offset": self._offset,
+            "register_length": self._length,
+            "register_decode_type": self._decode_type,
+            "register_factor": self._factor,
+        }
+
+    @property
     def device_info(self):
         """Return device information to link this entity with the device."""
         return {
