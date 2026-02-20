@@ -434,7 +434,7 @@ SENSOR_META = {
         "offset": 114,
         "length": 4,
         "decode": "hex",
-        "factor": 0.01,
+        "factor": 1,
         "unit": "bar",
         "device_class": "pressure",
         "state_class": "measurement",
