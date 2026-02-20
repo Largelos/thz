@@ -71,6 +71,22 @@ def decode_value(raw: bytes, decode_type: str, factor: float = 1.0) -> int | flo
     return raw.hex()
 
 
+# Maps sensor names to (block_name, byte_offset, byte_length, decode_type, factor).
+# Offsets/lengths are already converted from the register map's nibble notation:
+#   byte_offset = raw_offset // 2  (e.g. 8 → 4)
+#   byte_length = (raw_length + 1) // 2  (e.g. 4 → 2)
+_ENERGY_SENSOR_BLOCKS: dict[str, tuple[str, int, int, str, float]] = {
+    "sHeatDHWDay":     ("pxx0A092A", 4, 2, "hex2int", 1.0),
+    "sHeatDHWTotal":   ("pxx0A092C", 4, 2, "hex2int", 1.0),
+    "sHeatHCDay":      ("pxx0A092E", 4, 2, "hex2int", 1.0),
+    "sHeatHCTotal":    ("pxx0A0930", 4, 2, "hex2int", 1.0),
+    "sElectrDHWDay":   ("pxx0A091A", 4, 2, "hex2int", 1.0),
+    "sElectrDHWTotal": ("pxx0A091C", 4, 2, "hex2int", 1.0),
+    "sElectrHCDay":    ("pxx0A091E", 4, 2, "hex2int", 1.0),
+    "sElectrHCTotal":  ("pxx0A0920", 4, 2, "hex2int", 1.0),
+}
+
+
 async def async_setup_cop_sensors(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -405,25 +421,36 @@ class THZDailyCOPSensor(CoordinatorEntity, SensorEntity):
         return None
 
     def _get_sensor_value(self, sensor_name: str) -> float | None:
-        """Get the current value of a sensor by name.
+        """Get the current value of an energy sensor directly from coordinator data.
 
         Args:
-            sensor_name: The name of the sensor to retrieve.
+            sensor_name: The canonical sensor name (e.g. "sHeatDHWDay").
 
         Returns:
-            float | None: The sensor value, or None if unavailable.
+            float | None: The decoded sensor value, or None if unavailable.
         """
-        # Search through all entities to find the matching sensor
-        for state in self.hass.states.async_all():
-            if state.domain == "sensor" and state.entity_id.endswith(
-                sensor_name.lower()
-            ):
-                try:
-                    return float(state.state)
-                except (ValueError, TypeError):
-                    return None
-
-        return None
+        mapping = _ENERGY_SENSOR_BLOCKS.get(sensor_name)
+        if mapping is None:
+            _LOGGER.debug("No block mapping for energy sensor %s", sensor_name)
+            return None
+        block_name, offset, length, decode_type, factor = mapping
+        coordinator = self._coordinators.get(block_name)
+        if coordinator is None or coordinator.data is None:
+            _LOGGER.debug(
+                "No coordinator data for block %s (sensor %s)", block_name, sensor_name
+            )
+            return None
+        payload = coordinator.data
+        if len(payload) < offset + length:
+            _LOGGER.debug(
+                "Payload too short for sensor %s: %d bytes", sensor_name, len(payload)
+            )
+            return None
+        raw_bytes = payload[offset : offset + length]
+        try:
+            return float(decode_value(raw_bytes, decode_type, factor))
+        except (ValueError, TypeError):
+            return None
 
     @property
     def device_info(self):
@@ -517,25 +544,36 @@ class THZLifetimeCOPSensor(CoordinatorEntity, SensorEntity):
         return None
 
     def _get_sensor_value(self, sensor_name: str) -> float | None:
-        """Get the current value of a sensor by name.
+        """Get the current value of an energy sensor directly from coordinator data.
 
         Args:
-            sensor_name: The name of the sensor to retrieve.
+            sensor_name: The canonical sensor name (e.g. "sHeatDHWTotal").
 
         Returns:
-            float | None: The sensor value, or None if unavailable.
+            float | None: The decoded sensor value, or None if unavailable.
         """
-        # Search through all entities to find the matching sensor
-        for state in self.hass.states.async_all():
-            if state.domain == "sensor" and state.entity_id.endswith(
-                sensor_name.lower()
-            ):
-                try:
-                    return float(state.state)
-                except (ValueError, TypeError):
-                    return None
-
-        return None
+        mapping = _ENERGY_SENSOR_BLOCKS.get(sensor_name)
+        if mapping is None:
+            _LOGGER.debug("No block mapping for energy sensor %s", sensor_name)
+            return None
+        block_name, offset, length, decode_type, factor = mapping
+        coordinator = self._coordinators.get(block_name)
+        if coordinator is None or coordinator.data is None:
+            _LOGGER.debug(
+                "No coordinator data for block %s (sensor %s)", block_name, sensor_name
+            )
+            return None
+        payload = coordinator.data
+        if len(payload) < offset + length:
+            _LOGGER.debug(
+                "Payload too short for sensor %s: %d bytes", sensor_name, len(payload)
+            )
+            return None
+        raw_bytes = payload[offset : offset + length]
+        try:
+            return float(decode_value(raw_bytes, decode_type, factor))
+        except (ValueError, TypeError):
+            return None
 
     @property
     def device_info(self):
@@ -657,16 +695,29 @@ class THZMonthlyCOPSensor(CoordinatorEntity, SensorEntity):
         }
 
     def _get_sensor_value(self, sensor_name: str) -> float | None:
-        """Get the current value of a sensor by name."""
-        for state in self.hass.states.async_all():
-            if state.domain == "sensor" and state.entity_id.endswith(
-                sensor_name.lower()
-            ):
-                try:
-                    return float(state.state)
-                except (ValueError, TypeError):
-                    return None
-        return None
+        """Get the current value of an energy sensor directly from coordinator data."""
+        mapping = _ENERGY_SENSOR_BLOCKS.get(sensor_name)
+        if mapping is None:
+            _LOGGER.debug("No block mapping for energy sensor %s", sensor_name)
+            return None
+        block_name, offset, length, decode_type, factor = mapping
+        coordinator = self._coordinators.get(block_name)
+        if coordinator is None or coordinator.data is None:
+            _LOGGER.debug(
+                "No coordinator data for block %s (sensor %s)", block_name, sensor_name
+            )
+            return None
+        payload = coordinator.data
+        if len(payload) < offset + length:
+            _LOGGER.debug(
+                "Payload too short for sensor %s: %d bytes", sensor_name, len(payload)
+            )
+            return None
+        raw_bytes = payload[offset : offset + length]
+        try:
+            return float(decode_value(raw_bytes, decode_type, factor))
+        except (ValueError, TypeError):
+            return None
 
 # PLACEHOLDER
 # PLACEHOLDER
@@ -803,16 +854,29 @@ class THZYearlyCOPSensor(CoordinatorEntity, SensorEntity):
         }
 
     def _get_sensor_value(self, sensor_name: str) -> float | None:
-        """Get the current value of a sensor by name."""
-        for state in self.hass.states.async_all():
-            if state.domain == "sensor" and state.entity_id.endswith(
-                sensor_name.lower()
-            ):
-                try:
-                    return float(state.state)
-                except (ValueError, TypeError):
-                    return None
-        return None
+        """Get the current value of an energy sensor directly from coordinator data."""
+        mapping = _ENERGY_SENSOR_BLOCKS.get(sensor_name)
+        if mapping is None:
+            _LOGGER.debug("No block mapping for energy sensor %s", sensor_name)
+            return None
+        block_name, offset, length, decode_type, factor = mapping
+        coordinator = self._coordinators.get(block_name)
+        if coordinator is None or coordinator.data is None:
+            _LOGGER.debug(
+                "No coordinator data for block %s (sensor %s)", block_name, sensor_name
+            )
+            return None
+        payload = coordinator.data
+        if len(payload) < offset + length:
+            _LOGGER.debug(
+                "Payload too short for sensor %s: %d bytes", sensor_name, len(payload)
+            )
+            return None
+        raw_bytes = payload[offset : offset + length]
+        try:
+            return float(decode_value(raw_bytes, decode_type, factor))
+        except (ValueError, TypeError):
+            return None
 
     @property
     def device_info(self):

@@ -129,6 +129,42 @@
       "booster_stage_1": {
         "name": "Booster Stage 1"
       },
+      "switching_prog": {
+        "name": "Switching Program"
+      },
+      "heating_hc": {
+        "name": "Heating HC"
+      },
+      "heating_dhw": {
+        "name": "Heating DHW"
+      },
+      "booster_hc": {
+        "name": "Booster HC"
+      },
+      "filter_both": {
+        "name": "Filter Both"
+      },
+      "vent_stage": {
+        "name": "Ventilation Stage"
+      },
+      "pump_hc": {
+        "name": "Pump HC"
+      },
+      "defrost": {
+        "name": "Defrost"
+      },
+      "filter_up": {
+        "name": "Filter Up"
+      },
+      "filter_down": {
+        "name": "Filter Down"
+      },
+      "cooling": {
+        "name": "Cooling"
+      },
+      "service": {
+        "name": "Service"
+      },
       "high_pressure_sensor": {
         "name": "High Pressure Sensor"
       },
