@@ -12,7 +12,14 @@ Where:
     - length: Number of hex characters (2 per byte)
     - decode_type: Decoding function identifier
     - factor: Scaling factor for the value
+
+Energy sensors use paired registers – see readings_map_439.py for details.
 """
+
+# Paired register blocks specific to firmware 5.39
+PAIRED_BLOCKS: dict[str, str] = {
+    "pxx0A0648": "pxx0A0649",  # sCoolHCTotal
+}
 
 REGISTER_MAP = {
     "firmware": "539",
@@ -54,7 +61,7 @@ REGISTER_MAP = {
         ("sSetHumidityMax:", 8, 4, "hex2int", 1),
     ],
     "pxx0A0648": [
-        ("sCoolHCTotal:", 8, 4, "hex2int", 1),
+        ("sCoolHCTotal:", 8, 8, "hex2int", 1),
     ],
     # Temperature sensors (dew point)
     "pxx0B0264": [

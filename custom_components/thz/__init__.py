@@ -90,7 +90,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     hass.data[DOMAIN]["device"] = device
     hass.data[DOMAIN]["device_id"] = unique_id
 
-    # 5. Prepare dict for storing all coordinators
+    # 5. Collect paired register blocks for energy sensors (cmd2 + cmd3)
+    register_manager = hass.data[DOMAIN]["register_manager"]
+    paired_blocks = register_manager.get_paired_blocks()
+    if paired_blocks:
+        _LOGGER.debug(
+            "Paired register blocks for dual-read: %s", paired_blocks
+        )
+
+    # 6. Prepare dict for storing all coordinators
     coordinators = {}
     refresh_intervals = config_entry.data.get("refresh_intervals", {})
 
@@ -131,7 +139,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             _LOGGER,
             name=f"THZ {block}",
             update_interval=timedelta(seconds=int(interval)),
-            update_method=lambda b=block: _async_update_block(hass, device, b),
+            update_method=lambda b=block: _async_update_block(
+                hass, device, b, paired_blocks
+            ),
         )
         await coordinator.async_config_entry_first_refresh()
         _LOGGER.info(
@@ -400,8 +410,20 @@ async def _async_enable_integration_disabled_entities(
         )
 
 
-async def _async_update_block(hass: HomeAssistant, device: THZDevice, block_name: str):
-    """Called by coordinator to read a data block."""
+async def _async_update_block(
+    hass: HomeAssistant,
+    device: THZDevice,
+    block_name: str,
+    paired_blocks: dict[str, str] | None = None,
+):
+    """Called by coordinator to read a data block.
+
+    For paired register blocks (energy sensors), both the cmd2 and cmd3
+    registers are read and combined following the FHEM convention:
+        combined = cmd3_value * 1000 + cmd2_value
+    The result is stored as a 4-byte signed integer at the sensor offset
+    so that the sensor entity can decode it transparently.
+    """
     block_bytes = bytes.fromhex(block_name.removeprefix("pxx"))
     try:
         _LOGGER.debug("Reading block %s", block_name)
@@ -409,6 +431,36 @@ async def _async_update_block(hass: HomeAssistant, device: THZDevice, block_name
             result = await hass.async_add_executor_job(
                 device.read_block, block_bytes, "get"
             )
+
+            # If this block has a paired cmd3 register, read it too
+            if paired_blocks and block_name in paired_blocks:
+                cmd3_name = paired_blocks[block_name]
+                cmd3_bytes = bytes.fromhex(cmd3_name.removeprefix("pxx"))
+                cmd3_result = await hass.async_add_executor_job(
+                    device.read_block, cmd3_bytes, "get"
+                )
+
+                # Extract low (cmd2) and high (cmd3) values
+                # Both are signed 16-bit integers at byte offset 4
+                low_val = int.from_bytes(
+                    result[4:6], byteorder="big", signed=True
+                )
+                high_val = int.from_bytes(
+                    cmd3_result[4:6], byteorder="big", signed=True
+                )
+                combined = high_val * 1000 + low_val
+
+                _LOGGER.debug(
+                    "Paired read %s: low=%s, high=%s (%s), combined=%s",
+                    block_name, low_val, high_val, cmd3_name, combined,
+                )
+
+                # Build payload with 4-byte combined value at offset 4
+                buf = bytearray(max(len(result) + 2, 8))
+                buf[: len(result)] = result
+                buf[4:8] = combined.to_bytes(4, byteorder="big", signed=True)
+                result = bytes(buf)
+
             return result
     except Exception as err:
         raise UpdateFailed(f"Error reading {block_name}: {err}") from err
