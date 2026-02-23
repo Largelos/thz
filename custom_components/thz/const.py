@@ -39,6 +39,70 @@ WRITE_REGISTER_LENGTH = 2  # Number of bytes for most write parameters
 # Time conversion constants
 TIME_VALUE_UNSET = 0x80  # Sentinel value (128) indicating "no time" is set
 
+# Human-readable labels for register block names.
+# Used as fallback labels in the config flow and for documentation purposes.
+BLOCK_LABELS: dict[str, str] = {
+    # All firmware versions
+    "pxxFB":      "Temperatures & Status",
+    "pxxF2":      "Heat Request & Operating Mode",
+    "pxxF3":      "DHW Status",
+    "pxxF4":      "Heating Circuit Status",
+    "pxxFC":      "Date & Time",
+    "pxxFD":      "Firmware Date",
+    "pxxFE":      "Hardware/Software Version",
+    "pxx0A0176":  "Operating Status & Ventilation",
+    # Firmware 2.06
+    "pxx01":      "Fan Stage Airflows",
+    "pxx03":      "Defrost & Booster Settings",
+    "pxx04":      "Defrost & Filter Thresholds",
+    "pxx05":      "Heating Curve Settings",
+    "pxx06":      "Hysteresis & Summer Mode",
+    "pxx07":      "DHW Settings",
+    "pxx08":      "Solar Settings",
+    "pxx09":      "Operating Hours",
+    "pxx0A":      "Pump Cycle Settings",
+    "pxx0B":      "Heating Circuit Schedule",
+    "pxx0C":      "DHW Schedule",
+    "pxxD1":      "Fault Log",
+    "pxx0D":      "Ventilation Schedule",
+    "pxx0E":      "Setback Settings",
+    "pxx0F":      "Absence Program",
+    "pxx10":      "Dry Heat Settings",
+    "pxx17":      "Setpoint Temperatures",
+    "pxxE8":      "Air Flow Calibration",
+    "pxxEE":      "Operating Mode & Programs",
+    "pxxF6":      "Fan Stage & Error Log",
+    # Firmware 4.39 energy sensors
+    "pxx0A0924":  "Boost DHW Total Energy",
+    "pxx0A0928":  "Boost HC Total Energy",
+    "pxx0A03AE":  "Heat Recovery Daily",
+    "pxx0A03B0":  "Heat Recovery Total",
+    "pxx0A092A":  "Heat DHW Daily",
+    "pxx0A092C":  "Heat DHW Total",
+    "pxx0A092E":  "Heat HC Daily",
+    "pxx0A0930":  "Heat HC Total",
+    "pxx0A091A":  "Electricity DHW Daily",
+    "pxx0A091C":  "Electricity DHW Total",
+    "pxx0A091E":  "Electricity HC Daily",
+    "pxx0A0920":  "Electricity HC Total",
+    # Firmware 5.39
+    "pxx0A033B":  "Flow Rate",
+    "pxx0A064F":  "Humidity Masking Time",
+    "pxx0A0650":  "Humidity Threshold",
+    "pxx0A069A":  "Heating Relative Power",
+    "pxx0A069B":  "Compressor Relative Power",
+    "pxx0A069C":  "Compressor Speed (Unlimited)",
+    "pxx0A069D":  "Compressor Speed (Limited)",
+    "pxx0A06A4":  "Output Reduction",
+    "pxx0A06A5":  "Output Increase",
+    "pxx0A09D1":  "Humidity Protection",
+    "pxx0A09D2":  "Humidity Setpoint (Min)",
+    "pxx0A09D3":  "Humidity Setpoint (Max)",
+    "pxx0A0648":  "Cooling HC Total",
+    "pxx0B0264":  "Dew Point HC1",
+    "pxx0C0264":  "Dew Point HC2",
+}
+
 
 def should_hide_entity_by_default(entity_name: str) -> bool:
     """Determine if an entity should be hidden by default.
@@ -57,11 +121,8 @@ def should_hide_entity_by_default(entity_name: str) -> bool:
     name_lower = entity_name.lower()
 
     # Hide all HC2-related entities
-    if "hc2" in name_lower:
-        return True
-
     # Hide all time plan/program entities
-    if name_lower.startswith("program"):
+    if "hc2" in name_lower or "program" in name_lower:
         return True
 
     # Hide advanced technical parameters
