@@ -369,24 +369,6 @@
       "daily_cop_total": {
         "name": "Täglicher COP Gesamt"
       },
-      "monthly_cop_dhw": {
-        "name": "Monatlicher COP Warmwasser"
-      },
-      "monthly_cop_hc": {
-        "name": "Monatlicher COP Heizung"
-      },
-      "monthly_cop_total": {
-        "name": "Monatlicher COP Gesamt"
-      },
-      "yearly_cop_dhw": {
-        "name": "Jährlicher COP Warmwasser"
-      },
-      "yearly_cop_hc": {
-        "name": "Jährlicher COP Heizung"
-      },
-      "yearly_cop_total": {
-        "name": "Jährlicher COP Gesamt"
-      },
       "lifetime_cop_dhw": {
         "name": "Gesamt-COP Warmwasser"
       },
