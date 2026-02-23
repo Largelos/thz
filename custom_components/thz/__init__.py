@@ -371,8 +371,27 @@ async def _async_enable_integration_disabled_entities(
     name_count = 0
 
     for entity in entities:
-        # Get the entity's original name to check visibility
-        entity_name = entity.original_name or ""
+        # Get the entity's internal name to check visibility.
+        # After the translation system fix, write entities no longer set _attr_name
+        # when a translation_key is provided, so entity.original_name may be the
+        # translated name (e.g. "Passive Cooling") or None instead of the internal
+        # name (e.g. "p75PassiveCooling").  For write entities the unique_id always
+        # encodes the internal name as the last segment: thz_set_{command}_{name}.
+        unique_id = entity.unique_id or ""
+        if unique_id.startswith("thz_set_"):
+            # Format: thz_set_{hex_command}_{internal_name}
+            # Use maxsplit=3 so that underscores inside the name are preserved.
+            parts = unique_id.split("_", 3)
+            if len(parts) >= 4:
+                entity_name = parts[3]
+            else:
+                _LOGGER.warning(
+                    "Write entity %s has unexpected unique_id format: %s",
+                    entity.entity_id, unique_id
+                )
+                entity_name = entity.original_name or ""
+        else:
+            entity_name = entity.original_name or ""
         should_hide = should_hide_entity_by_default(entity_name)
 
         # Sync visibility state
