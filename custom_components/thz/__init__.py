@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+import re
 
 import voluptuous as vol
 
@@ -379,7 +380,7 @@ async def _async_enable_integration_disabled_entities(
         # encodes the internal name as the last segment: thz_set_{command}_{name}.
         unique_id = entity.unique_id or ""
         if unique_id.startswith("thz_set_"):
-            # Format: thz_set_{hex_command}_{internal_name}
+            # Write entity: thz_set_{hex_command}_{internal_name}
             # Use maxsplit=3 so that underscores inside the name are preserved.
             parts = unique_id.split("_", 3)
             if len(parts) >= 4:
@@ -391,7 +392,17 @@ async def _async_enable_integration_disabled_entities(
                 )
                 entity_name = entity.original_name or ""
         else:
-            entity_name = entity.original_name or ""
+            # Sensor entity: thz_{block}_{int_offset}_{entity_name_lower}
+            # The block is a bytes repr (e.g. "b'\\n\\t('") that may itself contain
+            # underscores, so we use a greedy regex to find the last _integer_name
+            # segment.  This is robust against translation failures where
+            # entity.original_name may be None or a translated string that no longer
+            # carries the internal naming pattern (e.g. "hc2").
+            match = re.search(r"^thz_.+_(\d+)_([a-z][a-z0-9_-]*)$", unique_id)
+            if match:
+                entity_name = match.group(2)
+            else:
+                entity_name = entity.original_name or ""
         should_hide = should_hide_entity_by_default(entity_name)
 
         # Sync visibility state
