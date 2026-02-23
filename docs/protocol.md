@@ -90,7 +90,7 @@ value = int.from_bytes(data_bytes, byteorder="big", signed=True) / factor
 
 ### Unsigned Values (hex)
 
-RPM values and counts use unsigned integers:
+Frequency (Hz) values and counts use unsigned integers:
 
 ```python
 value = int.from_bytes(data_bytes, byteorder="big", signed=False)
@@ -118,7 +118,7 @@ value = struct.unpack('>f', data_bytes)[0]  # Big-endian float
 
 ### Read Registers
 - **Temperatures, pressures**: Big-endian, signed
-- **RPM, counts**: Big-endian, unsigned
+- **Frequency (Hz), counts**: Big-endian, unsigned
 - **Binary flags**: Bit-level encoding
 
 ### Write Registers

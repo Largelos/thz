@@ -113,7 +113,7 @@ Utility functions for common platform setup:
 
 **Changes:**
 - Added `state_class: "measurement"` to 7 sensors that were missing it:
-  - outputVentilatorSpeed, inputVentilatorSpeed, mainVentilatorSpeed (rpm)
+  - outputVentilatorSpeed, inputVentilatorSpeed, mainVentilatorSpeed (Hz)
   - outside_tempFiltered, dewPoint (temperature)
   - flowRate (flow measurement)
   - p_HCw (pressure)
