@@ -17,7 +17,6 @@ values according to their metadata, and exposes them as HA sensor entities.
 from __future__ import annotations
 
 import logging
-import struct
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -35,6 +34,7 @@ from .const import DOMAIN, should_hide_entity_by_default
 from .cop_sensor import async_setup_cop_sensors
 from .register_maps.register_map_manager import RegisterMapManager
 from .sensor_meta import SENSOR_META
+from .value_codec import decode_raw_value
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -146,6 +146,8 @@ def decode_value(
 ) -> int | float | bool | str:
     """Decode a raw byte value according to the specified decode type.
 
+    This is a backward-compatible wrapper around :func:`value_codec.decode_raw_value`.
+
     Args:
         raw: The raw bytes to decode.
         decode_type: The type of decoding to apply. Supported types:
@@ -160,24 +162,7 @@ def decode_value(
     Returns:
         The decoded value (int, float, bool, or str).
     """
-    if decode_type == "hex2int":
-        # Only use 2 bytes; register indicates 4 chars in hex string
-        return int.from_bytes(raw, byteorder="big", signed=True) / factor
-    if decode_type == "hex":
-        # Only use 2 bytes; register indicates 4 chars in hex string
-        return int.from_bytes(raw, byteorder="big")
-    if decode_type.startswith("bit"):
-        bitnum = int(decode_type[3:])
-        return bool((raw[0] >> bitnum) & 0x01)
-    if decode_type.startswith("nbit"):
-        bitnum = int(decode_type[4:])
-        return not bool((raw[0] >> bitnum) & 0x01)
-    if decode_type == "esp_mant":
-        # FHEM code reverses bytes and unpacks, equivalent to big-endian
-        mant = struct.unpack('>f', raw)[0]
-        return round(mant, 3)
-
-    return raw.hex()
+    return decode_raw_value(raw, decode_type, factor)
 
 
 def normalize_entry(entry):
