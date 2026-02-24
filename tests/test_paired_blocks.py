@@ -82,7 +82,8 @@ class TestPairedBlocksRegisterLength:
         register_map = readings_map_439.REGISTER_MAP
         for block in readings_map_439.PAIRED_BLOCKS:
             entries = register_map.get(block, [])
-            for name, offset, length, decode_type, factor in entries:
+            for entry in entries:
+                name, offset, length = entry[0], entry[1], entry[2]
                 assert length == 8, (
                     f"Paired sensor {name} in block {block} should have "
                     f"length 8 (4 bytes) for combined value, got {length}"
@@ -93,7 +94,7 @@ class TestPairedBlocksRegisterLength:
         register_map = readings_map_439.REGISTER_MAP
         party_entries = register_map.get("pxx0A05D1", [])
         assert len(party_entries) == 1
-        _, _, length, _, _ = party_entries[0]
+        length = party_entries[0][2]
         assert length == 4, "party-time should keep length 4"
 
     def test_cool_hc_total_uses_length_8(self):
@@ -101,7 +102,7 @@ class TestPairedBlocksRegisterLength:
         register_map = readings_map_539.REGISTER_MAP
         entries = register_map.get("pxx0A0648", [])
         assert len(entries) == 1
-        _, _, length, _, _ = entries[0]
+        length = entries[0][2]
         assert length == 8, "sCoolHCTotal should have length 8 for combined value"
 
 
