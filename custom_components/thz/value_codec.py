@@ -44,7 +44,14 @@ def decode_raw_value(
         bitnum = int(decode_type[4:])
         return not bool((raw[0] >> bitnum) & 0x01)
     if decode_type == "esp_mant":
-        mant = struct.unpack(">f", raw)[0]
+        if len(raw) != 4:
+            raise ValueError(
+                f"Invalid esp_mant length: expected 4 bytes, got {len(raw)}"
+            )
+        try:
+            mant = struct.unpack(">f", raw)[0]
+        except struct.error as err:
+            raise ValueError(f"Failed to decode esp_mant value: {err}") from err
         return round(mant, 3)
 
     return raw.hex()

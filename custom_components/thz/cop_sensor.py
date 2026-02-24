@@ -256,13 +256,23 @@ class THZCurrentCOPSensor(CoordinatorEntity, SensorEntity):
         try:
             payload = self.coordinator.data
 
-            # Extract actualPower_Qc (thermal power output) at offset 94, length 8 bytes
-            if len(payload) < 110:
-                _LOGGER.debug("Payload too short for power sensors: %d bytes, need 110", len(payload))
+            # Extract actualPower_Qc and actualPower_Pel using nibble→byte conversion
+            # Register map uses nibble offsets/lengths (register_map_all.py):
+            #   actualPower_Qc:  nibble offset=94, nibble length=8
+            #   actualPower_Pel: nibble offset=102, nibble length=8
+            # byte_offset = nibble_offset // 2; byte_length = (nibble_length + 1) // 2
+            qc_byte_offset = 94 // 2    # = 47
+            qc_byte_length = (8 + 1) // 2  # = 4
+            pel_byte_offset = 102 // 2  # = 51
+            pel_byte_length = (8 + 1) // 2  # = 4
+            min_length = pel_byte_offset + pel_byte_length  # = 55
+
+            if len(payload) < min_length:
+                _LOGGER.debug("Payload too short for power sensors: %d bytes, need %d", len(payload), min_length)
                 return None
 
-            qc_bytes = payload[94:102]  # 8 bytes for esp_mant
-            pel_bytes = payload[102:110]  # 8 bytes for esp_mant
+            qc_bytes = payload[qc_byte_offset : qc_byte_offset + qc_byte_length]
+            pel_bytes = payload[pel_byte_offset : pel_byte_offset + pel_byte_length]
 
             # Decode using esp_mant format
             qc_value = decode_raw_value(qc_bytes, "esp_mant", 1.0)  # kW
