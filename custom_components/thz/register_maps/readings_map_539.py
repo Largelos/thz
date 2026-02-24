@@ -19,7 +19,11 @@ Energy sensors use paired registers – see readings_map_439.py for details.
 """
 
 _TEMP = {"unit": "°C", "device_class": "temperature", "state_class": "measurement"}
-_ENERGY_TOTAL = {"unit": "kWh", "device_class": "energy", "state_class": "total_increasing"}
+_ENERGY_TOTAL = {
+    "unit": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+}
 
 # Paired register blocks specific to firmware 5.39
 PAIRED_BLOCKS: dict[str, str] = {
@@ -30,49 +34,209 @@ REGISTER_MAP = {
     "firmware": "539",
     # Flow and measurement sensors
     "pxx0A033B": [
-        ("sFlowRate:", 8, 4, "hex2int", 1, {"unit": "l/min", "state_class": "measurement", "translation_key": "flow_rate"}),
+        (
+            "sFlowRate:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {"unit": "l/min", "state_class": "measurement", "translation_key": "flow_rate"},
+        ),
     ],
     "pxx0A064F": [
-        ("sHumMaskingTime:", 8, 4, "hex2int", 1, {"unit": "min", "device_class": "duration", "state_class": "measurement", "translation_key": "hum_masking_time"}),
+        (
+            "sHumMaskingTime:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "min",
+                "device_class": "duration",
+                "state_class": "measurement",
+                "translation_key": "hum_masking_time",
+            },
+        ),
     ],
     "pxx0A0650": [
-        ("sHumThreshold:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "humidity", "state_class": "measurement", "translation_key": "hum_threshold"}),
+        (
+            "sHumThreshold:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "humidity",
+                "state_class": "measurement",
+                "translation_key": "hum_threshold",
+            },
+        ),
     ],
     "pxx0A069A": [
-        ("sHeatingRelPower:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "power_factor", "state_class": "measurement", "translation_key": "heating_rel_power"}),
+        (
+            "sHeatingRelPower:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "power_factor",
+                "state_class": "measurement",
+                "translation_key": "heating_rel_power",
+            },
+        ),
     ],
     "pxx0A069B": [
-        ("sComprRelPower:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "power_factor", "state_class": "measurement", "translation_key": "compr_rel_power"}),
+        (
+            "sComprRelPower:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "power_factor",
+                "state_class": "measurement",
+                "translation_key": "compr_rel_power",
+            },
+        ),
     ],
     "pxx0A069C": [
-        ("sComprRotUnlimit:", 8, 4, "hex2int", 1, {"unit": "Hz", "device_class": "frequency", "state_class": "measurement", "translation_key": "compr_rot_unlimit"}),
+        (
+            "sComprRotUnlimit:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "Hz",
+                "device_class": "frequency",
+                "state_class": "measurement",
+                "translation_key": "compr_rot_unlimit",
+            },
+        ),
     ],
     "pxx0A069D": [
-        ("sComprRotLimit:", 8, 4, "hex2int", 1, {"unit": "Hz", "device_class": "frequency", "state_class": "measurement", "translation_key": "compr_rot_limit"}),
+        (
+            "sComprRotLimit:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "Hz",
+                "device_class": "frequency",
+                "state_class": "measurement",
+                "translation_key": "compr_rot_limit",
+            },
+        ),
     ],
     "pxx0A06A4": [
-        ("sOutputReduction:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "power_factor", "state_class": "measurement", "translation_key": "output_reduction"}),
+        (
+            "sOutputReduction:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "power_factor",
+                "state_class": "measurement",
+                "translation_key": "output_reduction",
+            },
+        ),
     ],
     "pxx0A06A5": [
-        ("sOutputIncrease:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "power_factor", "state_class": "measurement", "translation_key": "output_increase"}),
+        (
+            "sOutputIncrease:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "power_factor",
+                "state_class": "measurement",
+                "translation_key": "output_increase",
+            },
+        ),
     ],
     "pxx0A09D1": [
-        ("sHumProtection:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "humidity", "state_class": "measurement", "translation_key": "hum_protection"}),
+        (
+            "sHumProtection:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "humidity",
+                "state_class": "measurement",
+                "translation_key": "hum_protection",
+            },
+        ),
     ],
     "pxx0A09D2": [
-        ("sSetHumidityMin:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "humidity", "state_class": "measurement", "translation_key": "set_humidity_min"}),
+        (
+            "sSetHumidityMin:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "humidity",
+                "state_class": "measurement",
+                "translation_key": "set_humidity_min",
+            },
+        ),
     ],
     "pxx0A09D3": [
-        ("sSetHumidityMax:", 8, 4, "hex2int", 1, {"unit": "%", "device_class": "humidity", "state_class": "measurement", "translation_key": "set_humidity_max"}),
+        (
+            "sSetHumidityMax:",
+            8,
+            4,
+            "hex2int",
+            1,
+            {
+                "unit": "%",
+                "device_class": "humidity",
+                "state_class": "measurement",
+                "translation_key": "set_humidity_max",
+            },
+        ),
     ],
     "pxx0A0648": [
-        ("sCoolHCTotal:", 8, 8, "hex2int", 1, {**_ENERGY_TOTAL, "translation_key": "cool_hc_total"}),
+        (
+            "sCoolHCTotal:",
+            8,
+            8,
+            "hex2int",
+            1,
+            {**_ENERGY_TOTAL, "translation_key": "cool_hc_total"},
+        ),
     ],
     # Temperature sensors (dew point)
     "pxx0B0264": [
-        ("sDewPointHC1:", 8, 4, "hex2int", 10, {**_TEMP, "translation_key": "dew_point_hc1"}),
+        (
+            "sDewPointHC1:",
+            8,
+            4,
+            "hex2int",
+            10,
+            {**_TEMP, "translation_key": "dew_point_hc1"},
+        ),
     ],
     "pxx0C0264": [
-        ("sDewPointHC2:", 8, 4, "hex2int", 10, {**_TEMP, "translation_key": "dew_point_hc2"}),
+        (
+            "sDewPointHC2:",
+            8,
+            4,
+            "hex2int",
+            10,
+            {**_TEMP, "translation_key": "dew_point_hc2"},
+        ),
     ],
 }

@@ -73,7 +73,9 @@ class TestSensorMetadataLookup:
             entry = fb_by_name[sensor]
             assert len(entry) == 6, f"Sensor {sensor} should have 6-element tuple"
             meta = entry[5]
-            assert meta.get("translation_key") is not None, f"Sensor {sensor} should have translation_key"
+            assert meta.get("translation_key") is not None, (
+                f"Sensor {sensor} should have translation_key"
+            )
 
 
 class TestEntityHiding:

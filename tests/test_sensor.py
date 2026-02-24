@@ -92,7 +92,14 @@ class TestNormalizeEntry:
 
     def test_normalize_six_element_tuple_partial_meta(self):
         """Test normalizing a 6-element tuple with partial metadata."""
-        entry = ("boosterStage1:", 46, 1, "bit2", 1, {"translation_key": "booster_stage_1"})
+        entry = (
+            "boosterStage1:",
+            46,
+            1,
+            "bit2",
+            1,
+            {"translation_key": "booster_stage_1"},
+        )
         result = normalize_entry(entry)
 
         assert result["translation_key"] == "booster_stage_1"

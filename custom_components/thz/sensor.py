@@ -189,7 +189,9 @@ def normalize_entry(entry):
 
     Args:
         entry: The sensor entry to normalize. If a tuple, it should contain
-            (name, offset, length, decode, factor).
+            (name, offset, length, decode, factor[, meta_dict]) where the
+            optional 6th element is a dict with HA metadata keys: unit,
+            device_class, state_class, icon, translation_key.
 
     Returns:
         A dictionary containing the normalized sensor entry.
