@@ -37,27 +37,25 @@ class TestSensorNameCleaning:
 
 
 class TestSensorMetadataLookup:
-    """Test sensor metadata lookup with cleaned names."""
+    """Test sensor metadata lookup from register map tuples."""
 
-    def test_cleaned_name_finds_metadata(self):
-        """Test that cleaned names successfully find metadata."""
-        from custom_components.thz.sensor_meta import SENSOR_META
-        
+    def test_register_map_tuple_has_metadata(self):
+        """Test that register map tuples include metadata as 6th element."""
+        from custom_components.thz.register_maps.register_map_all import REGISTER_MAP
+
         # Original name from register map (with colon)
-        original_name = "outsideTemp:"
-        
-        # Clean the name
-        cleaned_name = original_name.strip().rstrip(':')
-        
-        # Lookup should succeed
-        meta = SENSOR_META.get(cleaned_name, {})
-        assert meta != {}
+        pxx_fb = REGISTER_MAP["pxxFB"]
+        outside_temp = next(t for t in pxx_fb if t[0].strip().rstrip(":") == "outsideTemp")
+
+        # 6th element should exist and have translation_key
+        assert len(outside_temp) == 6
+        meta = outside_temp[5]
         assert meta.get("translation_key") == "outside_temp"
 
-    def test_common_sensors_have_metadata(self):
-        """Test that common sensor names have metadata entries."""
-        from custom_components.thz.sensor_meta import SENSOR_META
-        
+    def test_common_sensors_have_metadata_in_register_map(self):
+        """Test that common sensor names have metadata in register map tuples."""
+        from custom_components.thz.register_maps.register_map_all import REGISTER_MAP
+
         common_sensors = [
             "outsideTemp",
             "flowTemp",
@@ -65,12 +63,16 @@ class TestSensorMetadataLookup:
             "hotGasTemp",
             "dhwTemp",
             "evaporatorTemp",
-            "condenserTemp"
+            "condenserTemp",
         ]
-        
+
+        pxx_fb = REGISTER_MAP["pxxFB"]
+        fb_by_name = {t[0].strip().rstrip(":"): t for t in pxx_fb}
         for sensor in common_sensors:
-            meta = SENSOR_META.get(sensor, {})
-            assert meta != {}, f"Sensor {sensor} should have metadata"
+            assert sensor in fb_by_name, f"Sensor {sensor} not found in pxxFB"
+            entry = fb_by_name[sensor]
+            assert len(entry) == 6, f"Sensor {sensor} should have 6-element tuple"
+            meta = entry[5]
             assert meta.get("translation_key") is not None, f"Sensor {sensor} should have translation_key"
 
 

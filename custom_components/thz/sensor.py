@@ -79,7 +79,11 @@ async def async_setup_entry(
 
         block_hex = block.removeprefix("pxx")  # Remove "pxx" prefix
         block_bytes = bytes.fromhex(block_hex)
-        for name, offset, length, decode_type, factor in entries:
+        for entry_tuple in entries:
+            name, offset, length, decode_type, factor = entry_tuple[:5]
+            # 6th element (if present) is a metadata dict with HA entity attributes
+            tuple_meta = entry_tuple[5] if len(entry_tuple) > 5 else {}
+
             # Strip whitespace and trailing colons from sensor name
             sensor_name = name.strip().rstrip(':')
 
@@ -94,7 +98,8 @@ async def async_setup_entry(
 
             seen_sensor_names.add(sensor_name)
 
-            meta = SENSOR_META.get(sensor_name, {})
+            # Tuple metadata takes precedence over legacy SENSOR_META lookup
+            meta = {**SENSOR_META.get(sensor_name, {}), **tuple_meta}
 
             # FHEM nibble-offset convention: each register offset is a nibble (4-bit)
             # position in the raw hex string.  Two consecutive nibble offsets share the
@@ -193,18 +198,19 @@ def normalize_entry(entry):
         ValueError: If the entry is not a tuple or dictionary.
     """
     if isinstance(entry, tuple):
-        name, offset, length, decode, factor = entry
+        name, offset, length, decode, factor = entry[:5]
+        meta = entry[5] if len(entry) > 5 else {}
         return {
             "name": name.strip(),
             "offset": offset,
             "length": length,
             "decode": decode,
             "factor": factor,
-            "unit": None,
-            "device_class": None,
-            "state_class": None,
-            "icon": None,
-            "translation_key": None,
+            "unit": meta.get("unit"),
+            "device_class": meta.get("device_class"),
+            "state_class": meta.get("state_class"),
+            "icon": meta.get("icon"),
+            "translation_key": meta.get("translation_key"),
         }
     if isinstance(entry, dict):
         return entry

@@ -76,6 +76,29 @@ class TestNormalizeEntry:
         assert result["decode"] == "hex"
         assert result["factor"] == 1
 
+    def test_normalize_six_element_tuple(self):
+        """Test normalizing a 6-element tuple with metadata dict."""
+        meta = {"unit": "°C", "device_class": "temperature", "state_class": "measurement",
+                "icon": "mdi:thermometer", "translation_key": "outside_temp"}
+        entry = ("outsideTemp:", 8, 4, "hex2int", 10, meta)
+        result = normalize_entry(entry)
+
+        assert result["name"] == "outsideTemp:"
+        assert result["unit"] == "°C"
+        assert result["device_class"] == "temperature"
+        assert result["state_class"] == "measurement"
+        assert result["icon"] == "mdi:thermometer"
+        assert result["translation_key"] == "outside_temp"
+
+    def test_normalize_six_element_tuple_partial_meta(self):
+        """Test normalizing a 6-element tuple with partial metadata."""
+        entry = ("boosterStage1:", 46, 1, "bit2", 1, {"translation_key": "booster_stage_1"})
+        result = normalize_entry(entry)
+
+        assert result["translation_key"] == "booster_stage_1"
+        assert result["unit"] is None
+        assert result["device_class"] is None
+
 
 class TestSensorNameCleaning:
     """Tests for sensor name cleaning logic in async_setup_entry."""
@@ -102,26 +125,30 @@ class TestSensorNameCleaning:
 class TestSensorMetadataIntegration:
     """Tests for sensor metadata integration."""
 
-    def test_sensor_meta_provides_device_class(self):
-        """Test that sensor metadata provides device class."""
-        from custom_components.thz.sensor_meta import SENSOR_META
-        
-        # Check a temperature sensor
-        meta = SENSOR_META.get("outsideTemp", {})
-        assert meta.get("device_class") is not None
+    def test_register_map_provides_device_class(self):
+        """Test that register map tuples provide device class in 6th element."""
+        from custom_components.thz.register_maps.register_map_all import REGISTER_MAP
+
+        # Check outsideTemp in pxxFB has temperature metadata
+        pxx_fb = REGISTER_MAP["pxxFB"]
+        outside_temp = next(t for t in pxx_fb if t[0].strip().rstrip(":") == "outsideTemp")
+        meta = outside_temp[5]
+        assert meta.get("device_class") == "temperature"
         assert meta.get("unit") == "°C"
 
-    def test_sensor_meta_provides_translation_key(self):
-        """Test that sensor metadata provides translation key."""
-        from custom_components.thz.sensor_meta import SENSOR_META
-        
-        meta = SENSOR_META.get("outsideTemp", {})
+    def test_register_map_provides_translation_key(self):
+        """Test that register map tuples provide translation key in 6th element."""
+        from custom_components.thz.register_maps.register_map_all import REGISTER_MAP
+
+        pxx_fb = REGISTER_MAP["pxxFB"]
+        outside_temp = next(t for t in pxx_fb if t[0].strip().rstrip(":") == "outsideTemp")
+        meta = outside_temp[5]
         assert meta.get("translation_key") == "outside_temp"
 
     def test_sensor_meta_fallback_for_missing(self):
         """Test that missing sensor metadata returns empty dict."""
         from custom_components.thz.sensor_meta import SENSOR_META
-        
+
         meta = SENSOR_META.get("nonExistentSensor", {})
         assert meta == {}
         assert meta.get("unit") is None
