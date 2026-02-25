@@ -83,7 +83,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     _LOGGER.debug("Device registry entry created/updated: %s", device_entry.id)
 
     # 3. Load register mappings
-    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN]["write_manager"] = device.write_register_map_manager
     hass.data[DOMAIN]["register_manager"] = device.register_map_manager
 

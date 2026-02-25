@@ -17,7 +17,6 @@ Separate COP values are calculated for:
 from __future__ import annotations
 
 import logging
-import struct
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -32,40 +31,9 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .value_codec import decode_raw_value
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def decode_value(raw: bytes, decode_type: str, factor: float = 1.0) -> int | float | bool | str:
-    """Decode a raw byte value according to the specified decode type.
-    
-    Note: This is duplicated from sensor.py to avoid circular imports.
-    The decode_value function is needed here for power sensor decoding,
-    but sensor.py imports async_setup_cop_sensors from this module.
-
-    Args:
-        raw: The raw bytes to decode.
-        decode_type: The type of decoding to apply.
-        factor: The divisor for "hex2int" decoding. Defaults to 1.0.
-
-    Returns:
-        The decoded value, type depends on decode_type.
-    """
-    if decode_type == "hex2int":
-        return int.from_bytes(raw, byteorder="big", signed=True) / factor
-    if decode_type == "hex":
-        return int.from_bytes(raw, byteorder="big")
-    if decode_type.startswith("bit"):
-        bitnum = int(decode_type[3:])
-        return bool((raw[0] >> bitnum) & 0x01)
-    if decode_type.startswith("nbit"):
-        bitnum = int(decode_type[4:])
-        return not bool((raw[0] >> bitnum) & 0x01)
-    if decode_type == "esp_mant":
-        mant = struct.unpack('>f', raw)[0]
-        return round(mant, 3)
-    
-    return raw.hex()
 
 
 # Maps sensor names to (block_name, byte_offset, byte_length, decode_type, factor).
@@ -288,17 +256,27 @@ class THZCurrentCOPSensor(CoordinatorEntity, SensorEntity):
         try:
             payload = self.coordinator.data
 
-            # Extract actualPower_Qc (thermal power output) at offset 94, length 8 bytes
-            if len(payload) < 110:
-                _LOGGER.debug("Payload too short for power sensors: %d bytes, need 110", len(payload))
+            # Extract actualPower_Qc and actualPower_Pel using nibble→byte conversion
+            # Register map uses nibble offsets/lengths (register_map_all.py):
+            #   actualPower_Qc:  nibble offset=94, nibble length=8
+            #   actualPower_Pel: nibble offset=102, nibble length=8
+            # byte_offset = nibble_offset // 2; byte_length = (nibble_length + 1) // 2
+            qc_byte_offset = 94 // 2    # = 47
+            qc_byte_length = (8 + 1) // 2  # = 4
+            pel_byte_offset = 102 // 2  # = 51
+            pel_byte_length = (8 + 1) // 2  # = 4
+            min_length = pel_byte_offset + pel_byte_length  # = 55
+
+            if len(payload) < min_length:
+                _LOGGER.debug("Payload too short for power sensors: %d bytes, need %d", len(payload), min_length)
                 return None
 
-            qc_bytes = payload[94:102]  # 8 bytes for esp_mant
-            pel_bytes = payload[102:110]  # 8 bytes for esp_mant
+            qc_bytes = payload[qc_byte_offset : qc_byte_offset + qc_byte_length]
+            pel_bytes = payload[pel_byte_offset : pel_byte_offset + pel_byte_length]
 
             # Decode using esp_mant format
-            qc_value = decode_value(qc_bytes, "esp_mant", 1.0)  # kW
-            pel_value = decode_value(pel_bytes, "esp_mant", 1.0)  # kW
+            qc_value = decode_raw_value(qc_bytes, "esp_mant", 1.0)  # kW
+            pel_value = decode_raw_value(pel_bytes, "esp_mant", 1.0)  # kW
 
             # Calculate COP
             if isinstance(pel_value, (int, float)) and pel_value > 0:
@@ -325,93 +303,35 @@ class THZCurrentCOPSensor(CoordinatorEntity, SensorEntity):
         }
 
 
-class THZDailyCOPSensor(CoordinatorEntity, SensorEntity):
-    """Sensor for daily COP based on daily energy values.
+class THZBaseCOPSensor(CoordinatorEntity, SensorEntity):
+    """Base class for COP sensors that compute from energy block data.
 
-    COP = Heat Output (Wh) / Electrical Input (Wh)
+    Provides shared coordinator storage, common sensor attributes,
+    the ``_get_sensor_value`` helper, and the ``device_info`` property
+    so that concrete subclasses only need to supply their specific
+    name/unique_id/translation_key and ``native_value`` logic.
     """
 
     def __init__(
-        self, coordinators: dict[str, Any], device_id: str, name: str, cop_type: str
+        self, coordinators: dict[str, Any], device_id: str
     ) -> None:
-        """Initialize the daily COP sensor.
+        """Initialize common COP sensor state.
 
         Args:
             coordinators: Dictionary of coordinators by block.
             device_id: The unique device identifier.
-            name: Internal name for the sensor.
-            cop_type: Type of COP calculation ("DHW", "HC", or "Total").
         """
-        # Daily COP needs access to multiple energy sensors
-        # We'll use the first available coordinator
         self._coordinators = coordinators
         primary_coordinator = next(iter(coordinators.values()))
         super().__init__(primary_coordinator)
 
         self._device_id = device_id
-        self._cop_type = cop_type
-
-        if cop_type == "DHW":
-            self._attr_name = "Daily COP DHW"
-            self._attr_unique_id = f"thz_{device_id}_daily_cop_dhw"
-            self._attr_translation_key = "daily_cop_dhw"
-            self._heat_sensor = "sHeatDHWDay"
-            self._elec_sensor = "sElectrDHWDay"
-        elif cop_type == "HC":
-            self._attr_name = "Daily COP Heating"
-            self._attr_unique_id = f"thz_{device_id}_daily_cop_hc"
-            self._attr_translation_key = "daily_cop_hc"
-            self._heat_sensor = "sHeatHCDay"
-            self._elec_sensor = "sElectrHCDay"
-        else:  # Total
-            self._attr_name = "Daily COP Total"
-            self._attr_unique_id = f"thz_{device_id}_daily_cop_total"
-            self._attr_translation_key = "daily_cop_total"
-            self._heat_sensor = None  # Will sum DHW + HC
-            self._elec_sensor = None  # Will sum DHW + HC
-
         self._attr_device_class = SensorDeviceClass.POWER_FACTOR
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_icon = "mdi:calculator"
         self._attr_native_unit_of_measurement = None  # COP is dimensionless
         self._attr_suggested_display_precision = 2
         self._attr_has_entity_name = True
-
-    @property
-    def native_value(self) -> StateType | float | None:
-        """Return the native value of the sensor (daily COP).
-
-        Returns:
-            float | None: The daily COP value, or None if data is unavailable.
-        """
-        # For daily COP, we need to access the actual sensor entities
-        # created by the main sensor platform
-        # This is done through the state machine
-
-        if self._cop_type == "Total":
-            # Sum DHW and HC values
-            heat_dhw = self._get_sensor_value("sHeatDHWDay")
-            heat_hc = self._get_sensor_value("sHeatHCDay")
-            elec_dhw = self._get_sensor_value("sElectrDHWDay")
-            elec_hc = self._get_sensor_value("sElectrHCDay")
-
-            if all(v is not None for v in [heat_dhw, heat_hc, elec_dhw, elec_hc]):
-                total_heat = heat_dhw + heat_hc
-                total_elec = elec_dhw + elec_hc
-            else:
-                return None
-        else:
-            # Use specific sensor values
-            total_heat = self._get_sensor_value(self._heat_sensor)
-            total_elec = self._get_sensor_value(self._elec_sensor)
-
-        if total_heat is not None and total_elec is not None and total_elec > 0:
-            cop = total_heat / total_elec
-            # Sanity check: COP should be between 0 and 10 for heat pumps
-            if 0 <= cop <= 10:
-                return round(cop, 2)
-
-        return None
 
     def _get_sensor_value(self, sensor_name: str) -> float | None:
         """Get the current value of an energy sensor directly from coordinator data.
@@ -441,7 +361,7 @@ class THZDailyCOPSensor(CoordinatorEntity, SensorEntity):
             return None
         raw_bytes = payload[offset : offset + length]
         try:
-            return float(decode_value(raw_bytes, decode_type, factor))
+            return float(decode_raw_value(raw_bytes, decode_type, factor))
         except (ValueError, TypeError):
             return None
 
@@ -453,7 +373,80 @@ class THZDailyCOPSensor(CoordinatorEntity, SensorEntity):
         }
 
 
-class THZLifetimeCOPSensor(CoordinatorEntity, SensorEntity):
+class THZDailyCOPSensor(THZBaseCOPSensor):
+    """Sensor for daily COP based on daily energy values.
+
+    COP = Heat Output (Wh) / Electrical Input (Wh)
+    """
+
+    def __init__(
+        self, coordinators: dict[str, Any], device_id: str, name: str, cop_type: str
+    ) -> None:
+        """Initialize the daily COP sensor.
+
+        Args:
+            coordinators: Dictionary of coordinators by block.
+            device_id: The unique device identifier.
+            name: Internal name for the sensor.
+            cop_type: Type of COP calculation ("DHW", "HC", or "Total").
+        """
+        super().__init__(coordinators, device_id)
+
+        self._cop_type = cop_type
+
+        if cop_type == "DHW":
+            self._attr_name = "Daily COP DHW"
+            self._attr_unique_id = f"thz_{device_id}_daily_cop_dhw"
+            self._attr_translation_key = "daily_cop_dhw"
+            self._heat_sensor = "sHeatDHWDay"
+            self._elec_sensor = "sElectrDHWDay"
+        elif cop_type == "HC":
+            self._attr_name = "Daily COP Heating"
+            self._attr_unique_id = f"thz_{device_id}_daily_cop_hc"
+            self._attr_translation_key = "daily_cop_hc"
+            self._heat_sensor = "sHeatHCDay"
+            self._elec_sensor = "sElectrHCDay"
+        else:  # Total
+            self._attr_name = "Daily COP Total"
+            self._attr_unique_id = f"thz_{device_id}_daily_cop_total"
+            self._attr_translation_key = "daily_cop_total"
+            self._heat_sensor = None  # Will sum DHW + HC
+            self._elec_sensor = None  # Will sum DHW + HC
+
+    @property
+    def native_value(self) -> StateType | float | None:
+        """Return the native value of the sensor (daily COP).
+
+        Returns:
+            float | None: The daily COP value, or None if data is unavailable.
+        """
+        if self._cop_type == "Total":
+            # Sum DHW and HC values
+            heat_dhw = self._get_sensor_value("sHeatDHWDay")
+            heat_hc = self._get_sensor_value("sHeatHCDay")
+            elec_dhw = self._get_sensor_value("sElectrDHWDay")
+            elec_hc = self._get_sensor_value("sElectrHCDay")
+
+            if all(v is not None for v in [heat_dhw, heat_hc, elec_dhw, elec_hc]):
+                total_heat = heat_dhw + heat_hc
+                total_elec = elec_dhw + elec_hc
+            else:
+                return None
+        else:
+            # Use specific sensor values
+            total_heat = self._get_sensor_value(self._heat_sensor)
+            total_elec = self._get_sensor_value(self._elec_sensor)
+
+        if total_heat is not None and total_elec is not None and total_elec > 0:
+            cop = total_heat / total_elec
+            # Sanity check: COP should be between 0 and 10 for heat pumps
+            if 0 <= cop <= 10:
+                return round(cop, 2)
+
+        return None
+
+
+class THZLifetimeCOPSensor(THZBaseCOPSensor):
     """Sensor for lifetime/total COP based on cumulative energy values.
 
     COP = Total Heat Output (kWh) / Total Electrical Input (kWh)
@@ -470,12 +463,8 @@ class THZLifetimeCOPSensor(CoordinatorEntity, SensorEntity):
             name: Internal name for the sensor.
             cop_type: Type of COP calculation ("DHW", "HC", or "Total").
         """
-        # Lifetime COP needs access to multiple energy sensors
-        self._coordinators = coordinators
-        primary_coordinator = next(iter(coordinators.values()))
-        super().__init__(primary_coordinator)
+        super().__init__(coordinators, device_id)
 
-        self._device_id = device_id
         self._cop_type = cop_type
 
         if cop_type == "DHW":
@@ -496,13 +485,6 @@ class THZLifetimeCOPSensor(CoordinatorEntity, SensorEntity):
             self._attr_translation_key = "lifetime_cop_total"
             self._heat_sensor = None  # Will sum DHW + HC
             self._elec_sensor = None  # Will sum DHW + HC
-
-        self._attr_device_class = SensorDeviceClass.POWER_FACTOR
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_icon = "mdi:calculator"
-        self._attr_native_unit_of_measurement = None  # COP is dimensionless
-        self._attr_suggested_display_precision = 2
-        self._attr_has_entity_name = True
 
     @property
     def native_value(self) -> StateType | float | None:
@@ -535,43 +517,4 @@ class THZLifetimeCOPSensor(CoordinatorEntity, SensorEntity):
                 return round(cop, 2)
 
         return None
-
-    def _get_sensor_value(self, sensor_name: str) -> float | None:
-        """Get the current value of an energy sensor directly from coordinator data.
-
-        Args:
-            sensor_name: The canonical sensor name (e.g. "sHeatDHWTotal").
-
-        Returns:
-            float | None: The decoded sensor value, or None if unavailable.
-        """
-        mapping = _ENERGY_SENSOR_BLOCKS.get(sensor_name)
-        if mapping is None:
-            _LOGGER.debug("No block mapping for energy sensor %s", sensor_name)
-            return None
-        block_name, offset, length, decode_type, factor = mapping
-        coordinator = self._coordinators.get(block_name)
-        if coordinator is None or coordinator.data is None:
-            _LOGGER.debug(
-                "No coordinator data for block %s (sensor %s)", block_name, sensor_name
-            )
-            return None
-        payload = coordinator.data
-        if len(payload) < offset + length:
-            _LOGGER.debug(
-                "Payload too short for sensor %s: %d bytes", sensor_name, len(payload)
-            )
-            return None
-        raw_bytes = payload[offset : offset + length]
-        try:
-            return float(decode_value(raw_bytes, decode_type, factor))
-        except (ValueError, TypeError):
-            return None
-
-    @property
-    def device_info(self):
-        """Return device information to link this entity with the device."""
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
-        }
 
