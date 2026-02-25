@@ -390,6 +390,14 @@ async def _async_enable_integration_disabled_entities(
                     entity.entity_id, unique_id
                 )
                 entity_name = entity.original_name or ""
+        elif unique_id.startswith("thz_schedule_time_"):
+            # Schedule time entity:
+            # thz_schedule_time_{command}_{normalized_base_name}_{time_type}
+            # The regex for sensor entities would incorrectly extract "start" or
+            # "end" as the name (the last segment), missing "program" in the base
+            # name.  Use the full unique_id so should_hide_entity_by_default() can
+            # find "program" / "hc2" in it.
+            entity_name = unique_id
         else:
             # Sensor entity: thz_{block}_{int_offset}_{entity_name_lower}
             # The block is a bytes repr (e.g. "b'\\n\\t('") that may itself contain

@@ -186,3 +186,77 @@ class TestSensorUniqueIdExtraction:
         """COP sensor unique_ids don't match the sensor regex."""
         uid = "thz_ip-192.168.1.100_current_cop"
         assert self._extract_name_from_sensor_uid(uid) is None
+
+    def test_schedule_time_uid_incorrectly_extracts_start(self):
+        """Schedule time entity unique_ids are NOT handled by the sensor regex.
+
+        The regex extracts "start_start" or "end_end" from schedule time
+        unique_ids (thz_schedule_time_{cmd}_{base}_start_start), which does NOT
+        contain "program".  This demonstrates why a dedicated branch is needed in
+        _async_enable_integration_disabled_entities for thz_schedule_time_ uids.
+        """
+        from custom_components.thz.const import should_hide_entity_by_default
+
+        uid = "thz_schedule_time_0104001600_programhc1_mo_0_start_start"
+        # The regex wrongly extracts "start_start" - not the program base name
+        name_via_regex = self._extract_name_from_sensor_uid(uid)
+        assert name_via_regex == "start_start"
+        # "start_start" is NOT hidden - this is the bug the fix addresses
+        assert not should_hide_entity_by_default(name_via_regex)
+        # But the full unique_id DOES contain "program" and should be hidden
+        assert should_hide_entity_by_default(uid)
+
+
+class TestScheduleTimeEntityVisibility:
+    """Test that schedule time entity unique_ids are correctly handled for hiding.
+
+    The _async_enable_integration_disabled_entities function in __init__.py has a
+    dedicated branch for thz_schedule_time_* unique_ids that uses the full
+    unique_id string for the should_hide_entity_by_default() check.
+    """
+
+    @staticmethod
+    def _extract_name_for_visibility(unique_id: str) -> str:
+        """Simulate the extraction logic from __init__.py for schedule time entities."""
+        import re
+        if unique_id.startswith("thz_set_"):
+            parts = unique_id.split("_", 3)
+            return parts[3] if len(parts) >= 4 else ""
+        if unique_id.startswith("thz_schedule_time_"):
+            return unique_id
+        match = re.search(r"^thz_.+_(\d+)_([a-z][a-z0-9_-]*)$", unique_id)
+        if match:
+            return match.group(2)
+        return ""
+
+    def test_program_hc1_start_hidden(self):
+        """HC1 program schedule start time is hidden."""
+        from custom_components.thz.const import should_hide_entity_by_default
+
+        uid = "thz_schedule_time_0104001600_programhc1_mo_0_start_start"
+        name = self._extract_name_for_visibility(uid)
+        assert should_hide_entity_by_default(name)
+
+    def test_program_hc1_end_hidden(self):
+        """HC1 program schedule end time is hidden."""
+        from custom_components.thz.const import should_hide_entity_by_default
+
+        uid = "thz_schedule_time_0104001600_programhc1_mo_0_end_end"
+        name = self._extract_name_for_visibility(uid)
+        assert should_hide_entity_by_default(name)
+
+    def test_program_dhw_hidden(self):
+        """DHW program schedule time is hidden."""
+        from custom_components.thz.const import should_hide_entity_by_default
+
+        uid = "thz_schedule_time_abcd1234_programdhw_fr_2_start_start"
+        name = self._extract_name_for_visibility(uid)
+        assert should_hide_entity_by_default(name)
+
+    def test_program_hc2_hidden(self):
+        """HC2 program schedule time is hidden (both hc2 and program match)."""
+        from custom_components.thz.const import should_hide_entity_by_default
+
+        uid = "thz_schedule_time_abcd1234_programhc2_mo_0_start_start"
+        name = self._extract_name_for_visibility(uid)
+        assert should_hide_entity_by_default(name)
