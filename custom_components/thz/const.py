@@ -29,7 +29,7 @@ CONNECTION_USB = "usb"
 CONNECTION_IP = "ip"
 DEFAULT_BAUDRATE = 115200
 DEFAULT_PORT = 2323
-DEFAULT_UPDATE_INTERVAL = 60  # in seconds
+DEFAULT_UPDATE_INTERVAL = 600  # in seconds
 
 # Write register offsets and lengths
 # These values are used when reading/writing individual parameters

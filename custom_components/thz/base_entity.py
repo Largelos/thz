@@ -11,6 +11,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.event import async_track_time_interval
 
 from .const import DEFAULT_UPDATE_INTERVAL, DOMAIN, should_hide_entity_by_default
 
@@ -27,7 +28,7 @@ class THZBaseEntity(Entity):
     across all THZ entity types that communicate with write registers.
     """
 
-    _attr_should_poll = True
+    _attr_should_poll = False
 
     def __init__(
         self,
@@ -84,9 +85,10 @@ class THZBaseEntity(Entity):
             getattr(self, '_attr_translation_key', None)
         )
 
-        # Configure update interval
+        # Store update interval for use in async_added_to_hass
         interval = scan_interval if scan_interval is not None else DEFAULT_UPDATE_INTERVAL
-        self.SCAN_INTERVAL = timedelta(seconds=interval)
+        self._update_interval = timedelta(seconds=interval)
+        self._unsub_update: Any = None
 
         # Set default visibility based on entity naming conventions
         self._attr_entity_registry_enabled_default = not should_hide_entity_by_default(name)
@@ -102,6 +104,25 @@ class THZBaseEntity(Entity):
             A unique identifier string.
         """
         return f"thz_set_{command.lower()}_{name.lower().replace(' ', '_')}"
+
+    async def async_added_to_hass(self) -> None:
+        """Schedule periodic updates when entity is added to Home Assistant."""
+        await super().async_added_to_hass()
+        self._unsub_update = async_track_time_interval(
+            self.hass,
+            self._async_scheduled_update,
+            self._update_interval,
+        )
+
+    async def _async_scheduled_update(self, _now: Any) -> None:
+        """Trigger an update from the periodic timer."""
+        await self.async_update_ha_state(force_refresh=True)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel the periodic update timer when entity is removed."""
+        if self._unsub_update is not None:
+            self._unsub_update()
+            self._unsub_update = None
 
     # No property overrides needed!
     # Home Assistant uses ONLY the _attr_* attributes for translation:
