@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
-import re
 
 import voluptuous as vol
 
@@ -19,7 +18,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_UPDATE_INTERVAL, DOMAIN, should_hide_entity_by_default
+from .const import DEFAULT_UPDATE_INTERVAL, DOMAIN
 from .thz_device import THZDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -164,11 +163,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     # Register services
     await _async_setup_services(hass)
-
-    # Re-enable any entities that were previously disabled by the integration
-    # This ensures the current code's visibility settings take precedence
-    # over cached registry state
-    await _async_enable_integration_disabled_entities(hass, config_entry)
 
     return True
 
@@ -348,102 +342,6 @@ async def _async_cleanup_orphaned_entities(hass: HomeAssistant) -> None:
     if orphaned_count > 0:
         _LOGGER.info(
             "Cleaned up %d orphaned THZ entities from registry", orphaned_count
-        )
-
-
-async def _async_enable_integration_disabled_entities(
-    hass: HomeAssistant, config_entry: ConfigEntry
-) -> None:
-    """Sync entity registry state with current code's visibility settings.
-
-    This function ensures the entity registry reflects the current code's visibility
-    logic, overriding any cached state from previous code versions.
-
-    It handles both directions:
-    - Re-enables entities that should be visible but are cached as disabled
-    - Disables entities that should be hidden but are cached as enabled
-    - Updates entity names to match current code (clears cached name overrides)
-    """
-    entity_reg = er.async_get(hass)
-    entities = er.async_entries_for_config_entry(entity_reg, config_entry.entry_id)
-    enabled_count = 0
-    disabled_count = 0
-    name_count = 0
-
-    for entity in entities:
-        # Get the entity's internal name to check visibility.
-        # After the translation system fix, write entities no longer set _attr_name
-        # when a translation_key is provided, so entity.original_name may be the
-        # translated name (e.g. "Passive Cooling") or None instead of the internal
-        # name (e.g. "p75PassiveCooling").  For write entities the unique_id always
-        # encodes the internal name as the last segment: thz_set_{command}_{name}.
-        unique_id = entity.unique_id or ""
-        if unique_id.startswith("thz_set_"):
-            # Write entity: thz_set_{hex_command}_{internal_name}
-            # Use maxsplit=3 so that underscores inside the name are preserved.
-            parts = unique_id.split("_", 3)
-            if len(parts) >= 4:
-                entity_name = parts[3]
-            else:
-                _LOGGER.warning(
-                    "Write entity %s has unexpected unique_id format: %s",
-                    entity.entity_id, unique_id
-                )
-                entity_name = entity.original_name or ""
-        elif unique_id.startswith("thz_schedule_time_"):
-            # Schedule time entity:
-            # thz_schedule_time_{command}_{normalized_base_name}_{time_type}
-            # The regex for sensor entities would incorrectly extract "start" or
-            # "end" as the name (the last segment), missing "program" in the base
-            # name.  Use the full unique_id so should_hide_entity_by_default() can
-            # find "program" / "hc2" in it.
-            entity_name = unique_id
-        else:
-            # Sensor entity: thz_{block}_{int_offset}_{entity_name_lower}
-            # The block is a bytes repr (e.g. "b'\\n\\t('") that may itself contain
-            # underscores, so we use a greedy regex to find the last _integer_name
-            # segment.  This is robust against translation failures where
-            # entity.original_name may be None or a translated string that no longer
-            # carries the internal naming pattern (e.g. "hc2").
-            match = re.search(r"^thz_.+_(\d+)_([a-z][a-z0-9_-]*)$", unique_id)
-            if match:
-                entity_name = match.group(2)
-            else:
-                entity_name = entity.original_name or ""
-        should_hide = should_hide_entity_by_default(entity_name)
-
-        # Sync visibility state
-        if should_hide:
-            # Entity should be hidden - disable if not already disabled by integration
-            if entity.disabled_by != er.RegistryEntryDisabler.INTEGRATION:
-                entity_reg.async_update_entity(
-                    entity.entity_id,
-                    disabled_by=er.RegistryEntryDisabler.INTEGRATION
-                )
-                _LOGGER.debug("Disabled entity %s (should be hidden)", entity.entity_id)
-                disabled_count += 1
-        else:
-            # Entity should be visible - enable if disabled by integration
-            if entity.disabled_by == er.RegistryEntryDisabler.INTEGRATION:
-                entity_reg.async_update_entity(entity.entity_id, disabled_by=None)
-                _LOGGER.debug(
-                    "Re-enabled entity %s (should be visible)", entity.entity_id
-                )
-                enabled_count += 1
-
-        # Sync entity name - clear any cached name override
-        # to use current code's name
-        if entity.name is not None:
-            entity_reg.async_update_entity(entity.entity_id, name=None)
-            _LOGGER.debug(
-                "Reset entity name for %s to use original_name", entity.entity_id
-            )
-            name_count += 1
-
-    if enabled_count > 0 or disabled_count > 0 or name_count > 0:
-        _LOGGER.info(
-            "Entity registry sync: enabled %d, disabled %d, reset %d names",
-            enabled_count, disabled_count, name_count
         )
 
 
