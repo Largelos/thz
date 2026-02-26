@@ -7,7 +7,8 @@ across entity platforms (number, switch, select, time).
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.entity import Entity
@@ -88,7 +89,7 @@ class THZBaseEntity(Entity):
         # Store update interval for use in async_added_to_hass
         interval = scan_interval if scan_interval is not None else DEFAULT_UPDATE_INTERVAL
         self._update_interval = timedelta(seconds=interval)
-        self._unsub_update: Any = None
+        self._unsub_update: Callable[[], None] | None = None
 
         # Set default visibility based on entity naming conventions
         self._attr_entity_registry_enabled_default = not should_hide_entity_by_default(name)
@@ -114,7 +115,7 @@ class THZBaseEntity(Entity):
             self._update_interval,
         )
 
-    async def _async_scheduled_update(self, _now: Any) -> None:
+    async def _async_scheduled_update(self, _now: datetime) -> None:
         """Trigger an update from the periodic timer."""
         await self.async_update_ha_state(force_refresh=True)
 
@@ -123,6 +124,7 @@ class THZBaseEntity(Entity):
         if self._unsub_update is not None:
             self._unsub_update()
             self._unsub_update = None
+        await super().async_will_remove_from_hass()
 
     # No property overrides needed!
     # Home Assistant uses ONLY the _attr_* attributes for translation:
