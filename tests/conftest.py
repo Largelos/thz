@@ -60,6 +60,7 @@ update_coordinator_mock.UpdateFailed = Exception
 sys.modules['homeassistant.helpers.update_coordinator'] = update_coordinator_mock
 
 sys.modules['homeassistant.helpers.entity_platform'] = MagicMock()
+sys.modules['homeassistant.helpers.event'] = MagicMock()
 sys.modules['homeassistant.helpers.typing'] = MagicMock()
 sys.modules['homeassistant.helpers.device_registry'] = MagicMock()
 sys.modules['homeassistant.helpers.area_registry'] = MagicMock()
