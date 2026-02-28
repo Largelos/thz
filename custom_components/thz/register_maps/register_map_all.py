@@ -150,7 +150,7 @@ REGISTER_MAP = {
             50,
             4,
             "hex",
-            10,
+            1,
             {**_FAN_POWER, "translation_key": "output_ventilator_power"},
         ),
         (
@@ -158,7 +158,7 @@ REGISTER_MAP = {
             54,
             4,
             "hex",
-            10,
+            1,
             {**_FAN_POWER, "translation_key": "input_ventilator_power"},
         ),
         (
@@ -166,7 +166,7 @@ REGISTER_MAP = {
             58,
             4,
             "hex",
-            10,
+            1,
             {**_FAN_POWER, "translation_key": "main_ventilator_power"},
         ),
         (
@@ -223,7 +223,7 @@ REGISTER_MAP = {
             4,
             "hex2int",
             100,
-            {**_PRESSURE, "icon": "mdi:flash", "translation_key": "pressure_nd"},
+            {**_PRESSURE, "icon": "mdi:gauge", "translation_key": "pressure_nd"},
         ),
         (
             "P_Hd:",
@@ -231,7 +231,7 @@ REGISTER_MAP = {
             4,
             "hex2int",
             100,
-            {**_PRESSURE, "icon": "mdi:flash", "translation_key": "pressure_hd"},
+            {**_PRESSURE, "icon": "mdi:gauge", "translation_key": "pressure_hd"},
         ),
         (
             "actualPower_Qc:",
@@ -300,7 +300,7 @@ REGISTER_MAP = {
             114,
             4,
             "hex",
-            100,
+            10,
             {**_PRESSURE, "translation_key": "pressure_hc"},
         ),  # board X4-1..3 sensor P4 HC water pressure
         (
@@ -343,8 +343,8 @@ REGISTER_MAP = {
         ("heatingCircuitPump:", 23, 1, "bit0", 1),  # hc pump
         ("mixerOpen:", 25, 1, "bit1", 1),  # mixer open
         ("mixerClosed:", 25, 1, "bit0", 1),  # mixer closed
-        ("sensorBits1:", 26, 2, "raw", 1),  # sensor condenser temperature ??
-        ("sensorBits2:", 28, 2, "raw", 1),  # sensor low pressure ??
+        #("sensorBits1:", 26, 2, "raw", 1),  # sensor condenser temperature ??
+        #("sensorBits2:", 28, 2, "raw", 1),  # sensor low pressure ??
         (
             "boostBlockTimeAfterPumpStart:",
             30,
