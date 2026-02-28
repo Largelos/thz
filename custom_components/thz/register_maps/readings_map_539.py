@@ -39,7 +39,7 @@ REGISTER_MAP = {
             8,
             4,
             "hex2int",
-            1,
+            0.1,
             {"unit": "l/min", "state_class": "measurement", "translation_key": "flow_rate"},
         ),
     ],
