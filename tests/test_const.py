@@ -53,7 +53,7 @@ class TestConstants:
         """Test default configuration values."""
         assert DEFAULT_BAUDRATE == 115200
         assert DEFAULT_PORT == 2323
-        assert DEFAULT_UPDATE_INTERVAL == 60
+        assert DEFAULT_UPDATE_INTERVAL == 600
 
     def test_write_register_constants(self):
         """Test write register constants."""
