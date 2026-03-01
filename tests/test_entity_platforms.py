@@ -209,3 +209,260 @@ class TestEntityHidingIntegration:
         """Test that base_entity module provides should_hide_entity_by_default."""
         from custom_components.thz.const import should_hide_entity_by_default
         assert callable(should_hide_entity_by_default)
+
+
+class TestEntityRegistryEnabledDefault:
+    """Test that entity instances set entity_registry_enabled_default correctly.
+
+    This verifies the full integration path: entity __init__ -> THZBaseEntity ->
+    should_hide_entity_by_default -> _attr_entity_registry_enabled_default.
+    """
+
+    @staticmethod
+    def _make_mock_device():
+        """Create a mock THZDevice for entity instantiation."""
+        from unittest.mock import MagicMock
+        device = MagicMock()
+        device.lock = MagicMock()
+        return device
+
+    @staticmethod
+    def _make_schedule_entry(command: str = "0A0500") -> dict:
+        """Create a minimal schedule-type write register entry."""
+        return {
+            "command": command,
+            "type": "schedule",
+            "icon": "mdi:calendar-clock",
+        }
+
+    @staticmethod
+    def _make_time_entry(command: str = "0A0600") -> dict:
+        """Create a minimal time-type write register entry."""
+        return {
+            "command": command,
+            "type": "time",
+            "icon": "mdi:clock",
+        }
+
+    @staticmethod
+    def _make_switch_entry(command: str = "0A0700") -> dict:
+        """Create a minimal switch-type write register entry."""
+        return {
+            "command": command,
+            "type": "switch",
+            "icon": "",
+        }
+
+    @staticmethod
+    def _make_number_entry(command: str = "0A0800") -> dict:
+        """Create a minimal number-type write register entry."""
+        return {
+            "command": command,
+            "type": "number",
+            "icon": "",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "",
+            "device_class": "",
+            "decode_type": "0clean",
+        }
+
+    @staticmethod
+    def _make_select_entry(command: str = "0A0900") -> dict:
+        """Create a minimal select-type write register entry."""
+        return {
+            "command": command,
+            "type": "select",
+            "icon": "",
+            "decode_type": "opmode",
+        }
+
+    def test_schedule_time_program_entities_disabled_by_default(self):
+        """Test that THZScheduleTime entities with 'program' names are disabled by default."""
+        from custom_components.thz.time import THZScheduleTime
+
+        device = self._make_mock_device()
+        entry = self._make_schedule_entry()
+
+        program_names = [
+            "programHC1_Mo_0",
+            "programHC1_Fr_2",
+            "programDHW_Mo_0",
+            "programFan1_Sa_0",
+            "programHC2_Mo-So_2",
+            "programFan2_Tu_1",
+        ]
+
+        for base_name in program_names:
+            for time_type in ("start", "end"):
+                suffix = "Start" if time_type == "start" else "End"
+                entity = THZScheduleTime(
+                    name=f"{base_name} {suffix}",
+                    base_name=base_name,
+                    entry=entry,
+                    device=device,
+                    device_id="test_device",
+                    time_type=time_type,
+                )
+                assert entity.entity_registry_enabled_default is False, (
+                    f"{base_name} {suffix} should be disabled by default"
+                )
+
+    def test_schedule_time_non_program_entities_enabled_by_default(self):
+        """Test that THZScheduleTime entities without hide keywords are enabled by default."""
+        from custom_components.thz.time import THZScheduleTime
+
+        device = self._make_mock_device()
+        entry = self._make_schedule_entry()
+
+        # A hypothetical non-program schedule entity
+        entity = THZScheduleTime(
+            name="customSchedule_Mo_0 Start",
+            base_name="customSchedule_Mo_0",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+            time_type="start",
+        )
+        assert entity.entity_registry_enabled_default is True
+
+    def test_time_entity_holiday_enabled_by_default(self):
+        """Test that regular time entities like pHolidayBeginTime are enabled."""
+        from custom_components.thz.time import THZTime
+
+        device = self._make_mock_device()
+        entry = self._make_time_entry()
+
+        entity = THZTime(
+            name="pHolidayBeginTime",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+        )
+        assert entity.entity_registry_enabled_default is True
+
+    def test_switch_program_entity_disabled(self):
+        """Test that switch entities with 'program' in name are disabled by default."""
+        from custom_components.thz.switch import THZSwitch
+
+        device = self._make_mock_device()
+        entry = self._make_switch_entry()
+
+        entity = THZSwitch(
+            name="programHC1_enable",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+        )
+        assert entity.entity_registry_enabled_default is False
+
+    def test_switch_basic_entity_enabled(self):
+        """Test that basic switch entities are enabled by default."""
+        from custom_components.thz.switch import THZSwitch
+
+        device = self._make_mock_device()
+        entry = self._make_switch_entry()
+
+        entity = THZSwitch(
+            name="pOpMode",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+        )
+        assert entity.entity_registry_enabled_default is True
+
+    def test_number_hc2_entity_disabled(self):
+        """Test that HC2-related number entities are disabled by default."""
+        from custom_components.thz.number import THZNumber
+
+        device = self._make_mock_device()
+        entry = self._make_number_entry()
+
+        entity = THZNumber(
+            name="p01RoomTempDayHC2",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+        )
+        assert entity.entity_registry_enabled_default is False
+
+    def test_number_basic_entity_enabled(self):
+        """Test that basic number entities like p01 are enabled by default."""
+        from custom_components.thz.number import THZNumber
+
+        device = self._make_mock_device()
+        entry = self._make_number_entry()
+
+        entity = THZNumber(
+            name="p01RoomTempDayHC1",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+        )
+        assert entity.entity_registry_enabled_default is True
+
+    def test_number_advanced_param_disabled(self):
+        """Test that advanced parameter (p13+) number entities are disabled."""
+        from custom_components.thz.number import THZNumber
+
+        device = self._make_mock_device()
+        entry = self._make_number_entry()
+
+        entity = THZNumber(
+            name="p13GradientHC1",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+        )
+        assert entity.entity_registry_enabled_default is False
+
+    def test_select_basic_entity_enabled(self):
+        """Test that basic select entities are enabled by default."""
+        from custom_components.thz.select import THZSelect
+
+        device = self._make_mock_device()
+        entry = self._make_select_entry()
+
+        entity = THZSelect(
+            name="pOpMode",
+            entry=entry,
+            device=device,
+            device_id="test_device",
+        )
+        assert entity.entity_registry_enabled_default is True
+
+    def test_all_write_map_program_entities_disabled(self):
+        """Verify ALL program entries in write_map_439_539 produce disabled entities.
+
+        This is an end-to-end test: load the actual write map, create
+        THZScheduleTime entities for every schedule entry whose name
+        contains 'program', and assert entity_registry_enabled_default is False.
+        """
+        from custom_components.thz.time import THZScheduleTime
+        from custom_components.thz.register_maps.write_map_439_539 import WRITE_MAP
+
+        device = self._make_mock_device()
+
+        program_count = 0
+        for name, entry in WRITE_MAP.items():
+            if entry["type"] == "schedule" and "program" in name.lower():
+                program_count += 1
+                for time_type in ("start", "end"):
+                    suffix = "Start" if time_type == "start" else "End"
+                    entity = THZScheduleTime(
+                        name=f"{name} {suffix}",
+                        base_name=name,
+                        entry=entry,
+                        device=device,
+                        device_id="test_device",
+                        time_type=time_type,
+                    )
+                    assert entity.entity_registry_enabled_default is False, (
+                        f"Write map entry '{name} {suffix}' should be disabled by default"
+                    )
+
+        # Sanity: write_map_439_539 has exactly 120 program schedule entries
+        assert program_count == 120, (
+            f"Expected 120 program schedule entries, found {program_count}"
+        )

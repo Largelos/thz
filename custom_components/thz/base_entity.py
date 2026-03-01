@@ -92,7 +92,17 @@ class THZBaseEntity(Entity):
         self._unsub_update: Callable[[], None] | None = None
 
         # Set default visibility based on entity naming conventions
+        # Uses HA's standard _attr_ pattern – do NOT add an explicit @property
+        # override; it conflicts with HA's __init_subclass__ CachedProperty
+        # mechanism and can silently default to True on derived entity classes.
         self._attr_entity_registry_enabled_default = not should_hide_entity_by_default(name)
+
+        _LOGGER.debug(
+            "Entity %s: entity_registry_enabled_default=%s (hide=%s)",
+            name,
+            self._attr_entity_registry_enabled_default,
+            should_hide_entity_by_default(name),
+        )
 
     def _generate_unique_id(self, command: str, name: str) -> str:
         """Generate a unique identifier for the entity.
@@ -134,11 +144,15 @@ class THZBaseEntity(Entity):
     #
     # IMPORTANT: Setting _attr_name blocks translation_key from working!
     # Properties are NOT evaluated by HA's translation system.
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added to the registry."""
-        return self._attr_entity_registry_enabled_default
+    #
+    # NOTE: Do NOT define @property entity_registry_enabled_default here!
+    # HA's Entity.__init_subclass__ creates CachedProperty descriptors for
+    # _attr_* backed properties.  An explicit @property on this base class
+    # can be shadowed by a CachedProperty that __init_subclass__ installs
+    # on a *derived* class (e.g. THZScheduleTime), causing the derived
+    # class's descriptor to ignore _attr_entity_registry_enabled_default
+    # and default to True.  Letting HA resolve the _attr_ pattern natively
+    # is the correct approach for HA >= 2023.
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

@@ -4,8 +4,17 @@ from unittest.mock import MagicMock, Mock
 
 # Create mock base classes to avoid metaclass conflicts
 class MockEntity:
-    """Mock entity base class."""
-    pass
+    """Mock entity base class.
+
+    Simulates HA's _attr_ pattern for entity_registry_enabled_default so that
+    tests can verify the attribute without an explicit @property on the
+    integration's entity classes.
+    """
+
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return entity_registry_enabled_default via HA's _attr_ pattern."""
+        return getattr(self, "_attr_entity_registry_enabled_default", True)
 
 class MockCoordinatorEntity(MockEntity):
     """Mock coordinator entity."""
