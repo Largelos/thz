@@ -29,6 +29,8 @@ def decode_raw_value(
             - "esp_mant": Mantissa and exponent representation.
             - "hexdate": 2-byte unsigned int formatted as "DD.MM" (value/100 . value%100).
             - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
+            - "somwinmode": Map lookup for summer/winter mode.
+            - "weekday": Map lookup for day of week.
             - Any other: Returns hexadecimal representation.
         factor: The divisor for "hex2int" and "hex" decoding. Defaults to 1.0.
 
@@ -67,6 +69,12 @@ def decode_raw_value(
         month = raw[1]
         day = raw[2]
         return f"{year:04d}-{month:02d}-{day:02d}"
+    if decode_type == "somwinmode":
+        key = raw.hex()
+        return SELECT_MAP.get("SomWinMode", {}).get(key, key)
+    if decode_type == "weekday":
+        key = str(int.from_bytes(raw, byteorder="big"))
+        return SELECT_MAP.get("weekday", {}).get(key, key)
 
     return raw.hex()
 

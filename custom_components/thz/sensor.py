@@ -158,6 +158,8 @@ def decode_value(
             - "esp_mant": Mantissa and exponent representation.
             - "hexdate": 2-byte unsigned int formatted as "DD.MM" (value/100 . value%100).
             - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
+            - "somwinmode": Map lookup for summer/winter mode.
+            - "weekday": Map lookup for day of week.
             - Any other: Returns hexadecimal representation.
         factor: The divisor for "hex2int" and "hex" decoding. Defaults to 1.0.
 
