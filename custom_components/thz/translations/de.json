@@ -1637,13 +1637,26 @@
       "start_unsched_vent": {
         "name": "Ungeplante Lüftung starten"
       },
+      "pasteurisation_temp": {
+        "name": "Pasteurisierungstemperatur"
+      },
       "party_time": {
-        "name": "Party Zeit"
+        "name": "Party-Zeit"
       }
     },
     "select": {
       "op_mode": {
         "name": "Betriebsart"
+      },
+      "passive_cooling": {
+        "name": "Passive Kühlung",
+        "state": {
+          "off": "Aus",
+          "supply_air": "Zulüften",
+          "exhaust_air": "Ablüften",
+          "bypass": "Bypass",
+          "auto": "Auto"
+        }
       },
       "z_control_valve_dhw": {
         "name": "Steuerventil Warmwasser"

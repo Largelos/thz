@@ -86,7 +86,7 @@ WRITE_MAP = {
         "unit": "",
         "type": "select",
         "device_class": "",
-        "icon": "mdi:cooling",
-        "decode_type": "1clean",
+        "icon": "mdi:snowflake",
+        "decode_type": "passive_cooling",
     }
 }

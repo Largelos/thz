@@ -82,12 +82,12 @@ WRITE_MAP = {
     "p75passiveCooling": {
         "command": "0A0575",
         "min": "0",
-        "max": "2",
+        "max": "4",
         "unit": "",
         "type": "select",
         "device_class": "",
-        "icon": "mdi:cooling",
-        "decode_type": "1clean",
+        "icon": "mdi:snowflake",
+        "decode_type": "passive_cooling",
     },
     "p99PumpRateHC": {
         "command": "0A02CB",

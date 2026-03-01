@@ -1637,6 +1637,9 @@
       "start_unsched_vent": {
         "name": "Start Unscheduled Ventilation"
       },
+      "pasteurisation_temp": {
+        "name": "Pasteurisation Temperature"
+      },
       "party_time": {
         "name": "Party Time"
       }
@@ -1644,6 +1647,16 @@
     "select": {
       "op_mode": {
         "name": "Operating Mode"
+      },
+      "passive_cooling": {
+        "name": "Passive Cooling",
+        "state": {
+          "off": "Off",
+          "supply_air": "Supply Air",
+          "exhaust_air": "Exhaust Air",
+          "bypass": "Bypass",
+          "auto": "Auto"
+        }
       },
       "z_control_valve_dhw": {
         "name": "Control Valve DHW"
