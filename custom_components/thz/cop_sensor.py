@@ -228,7 +228,6 @@ class THZCurrentCOPSensor(CoordinatorEntity, SensorEntity):
         super().__init__(self._power_coordinator)
 
         self._device_id = device_id
-        self._attr_name = "Current COP"
         self._attr_unique_id = f"thz_{device_id}_current_cop"
         self._attr_device_class = SensorDeviceClass.POWER_FACTOR
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -395,19 +394,16 @@ class THZDailyCOPSensor(THZBaseCOPSensor):
         self._cop_type = cop_type
 
         if cop_type == "DHW":
-            self._attr_name = "Daily COP DHW"
             self._attr_unique_id = f"thz_{device_id}_daily_cop_dhw"
             self._attr_translation_key = "daily_cop_dhw"
             self._heat_sensor = "sHeatDHWDay"
             self._elec_sensor = "sElectrDHWDay"
         elif cop_type == "HC":
-            self._attr_name = "Daily COP Heating"
             self._attr_unique_id = f"thz_{device_id}_daily_cop_hc"
             self._attr_translation_key = "daily_cop_hc"
             self._heat_sensor = "sHeatHCDay"
             self._elec_sensor = "sElectrHCDay"
         else:  # Total
-            self._attr_name = "Daily COP Total"
             self._attr_unique_id = f"thz_{device_id}_daily_cop_total"
             self._attr_translation_key = "daily_cop_total"
             self._heat_sensor = None  # Will sum DHW + HC
@@ -468,19 +464,16 @@ class THZLifetimeCOPSensor(THZBaseCOPSensor):
         self._cop_type = cop_type
 
         if cop_type == "DHW":
-            self._attr_name = "Lifetime COP DHW"
             self._attr_unique_id = f"thz_{device_id}_lifetime_cop_dhw"
             self._attr_translation_key = "lifetime_cop_dhw"
             self._heat_sensor = "sHeatDHWTotal"
             self._elec_sensor = "sElectrDHWTotal"
         elif cop_type == "HC":
-            self._attr_name = "Lifetime COP Heating"
             self._attr_unique_id = f"thz_{device_id}_lifetime_cop_hc"
             self._attr_translation_key = "lifetime_cop_hc"
             self._heat_sensor = "sHeatHCTotal"
             self._elec_sensor = "sElectrHCTotal"
         else:  # Total
-            self._attr_name = "Lifetime COP Total"
             self._attr_unique_id = f"thz_{device_id}_lifetime_cop_total"
             self._attr_translation_key = "lifetime_cop_total"
             self._heat_sensor = None  # Will sum DHW + HC
