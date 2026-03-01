@@ -313,36 +313,38 @@ REGISTER_MAP = {
         ),  # board X4-4..6 sensor B15
     ],
     "pxxF2": [
-        ("heatRequest:", 4, 2, "hex", 1),  # 0=DHW 2=heat 5=off 6=defrostEva
-        ("heatRequest2:", 6, 2, "hex", 1),  # same as heatRequest
+        ("heatRequest:", 4, 2, "hex", 1, {"translation_key": "heat_request"}),  # 0=DHW 2=heat 5=off 6=defrostEva
+        ("heatRequest2:", 6, 2, "hex", 1, {"translation_key": "heat_request2"}),  # same as heatRequest
         (
             "hcStage:",
             8,
             2,
             "hex",
             1,
+            {"translation_key": "hc_stage"},
         ),  # 0=off 1=solar 2=heatPump 3=boost1 4=boost2 5=boost3
-        ("dhwStage:", 10, 2, "hex", 1),  # 0=off, 1=solar, 2=heatPump 3=boostMax
+        ("dhwStage:", 10, 2, "hex", 1, {"translation_key": "dhw_stage"}),  # 0=off, 1=solar, 2=heatPump 3=boostMax
         (
             " heatStageControlModul: ",
             12,
             2,
             "hex",
             1,
+            {"translation_key": "heat_stage_control_modul"},
         ),  # either hcStage or dhwStage depending from heatRequest
-        ("compBlockTime:", 14, 4, "hex2int", 1),  # remaining compressor block time
-        ("pasteurisationMode:", 18, 2, "hex", 1),  # 0=off 1=on
-        ("defrostEvaporator:", 20, 2, "raw", 1),  # 10=off 30=defrostEva
-        ("boosterStage2:", 22, 1, "bit3", 1),  # booster 2
-        ("solarPump:", 22, 1, "bit2", 1),  # solar pump
-        ("boosterStage1:", 22, 1, "bit1", 1),  # booster 1
-        ("compressor:", 22, 1, "bit0", 1),  # compressor
-        ("heatPipeValve:", 23, 1, "bit3", 1),  # heat pipe valve
-        ("diverterValve:", 23, 1, "bit2", 1),  # diverter valve
-        ("dhwPump:", 23, 1, "bit1", 1),  # dhw pump
-        ("heatingCircuitPump:", 23, 1, "bit0", 1),  # hc pump
-        ("mixerOpen:", 25, 1, "bit1", 1),  # mixer open
-        ("mixerClosed:", 25, 1, "bit0", 1),  # mixer closed
+        ("compBlockTime:", 14, 4, "hex2int", 1, {"translation_key": "comp_block_time"}),  # remaining compressor block time
+        ("pasteurisationMode:", 18, 2, "hex", 1, {"translation_key": "pasteurisation_mode"}),  # 0=off 1=on
+        ("defrostEvaporator:", 20, 2, "raw", 1, {"translation_key": "defrost_evaporator"}),  # 10=off 30=defrostEva
+        ("boosterStage2:", 22, 1, "bit3", 1, {"translation_key": "booster_stage_2"}),  # booster 2
+        ("solarPump:", 22, 1, "bit2", 1, {"translation_key": "solar_pump"}),  # solar pump
+        ("boosterStage1:", 22, 1, "bit1", 1, {"translation_key": "booster_stage_1"}),  # booster 1
+        ("compressor:", 22, 1, "bit0", 1, {"translation_key": "compressor"}),  # compressor
+        ("heatPipeValve:", 23, 1, "bit3", 1, {"translation_key": "heat_pipe_valve"}),  # heat pipe valve
+        ("diverterValve:", 23, 1, "bit2", 1, {"translation_key": "diverter_valve"}),  # diverter valve
+        ("dhwPump:", 23, 1, "bit1", 1, {"translation_key": "dhw_pump"}),  # dhw pump
+        ("heatingCircuitPump:", 23, 1, "bit0", 1, {"translation_key": "heating_circuit_pump"}),  # hc pump
+        ("mixerOpen:", 25, 1, "bit1", 1, {"translation_key": "mixer_open"}),  # mixer open
+        ("mixerClosed:", 25, 1, "bit0", 1, {"translation_key": "mixer_closed"}),  # mixer closed
         #("sensorBits1:", 26, 2, "raw", 1),  # sensor condenser temperature ??
         #("sensorBits2:", 28, 2, "raw", 1),  # sensor low pressure ??
         (
@@ -351,19 +353,20 @@ REGISTER_MAP = {
             4,
             "hex2int",
             1,
+            {"translation_key": "boost_block_time_after_pump_start"},
         ),  # after each  pump start (dhw or heat circuit)
-        ("boostBlockTimeAfterHD:", 34, 4, "hex2int", 1),  # ??
+        ("boostBlockTimeAfterHD:", 34, 4, "hex2int", 1, {"translation_key": "boost_block_time_after_hd"}),  # ??
     ],
     "pxxF3": [
-        ("dhwTemp:", 4, 4, "hex2int", 10),
-        ("outsideTemp:", 8, 4, "hex2int", 10),
-        ("dhwSetTemp:", 12, 4, "hex2int", 10),
-        ("compBlockTime:", 16, 4, "hex2int", 1),
-        ("out:", 20, 4, "raw", 1),
-        ("heatBlockTime:", 24, 4, "hex2int", 1),
-        ("dhwBoosterStage:", 28, 2, "hex", 1),
-        ("pasteurisationMode:", 32, 2, "hex", 1),
-        ("dhwOpMode:", 34, 2, "opmodehc", 1),
+        ("dhwTemp:", 4, 4, "hex2int", 10, {**_TEMP, "icon": "mdi:water-boiler", "translation_key": "dhw_temp"}),
+        ("outsideTemp:", 8, 4, "hex2int", 10, {**_TEMP, "translation_key": "outside_temp"}),
+        ("dhwSetTemp:", 12, 4, "hex2int", 10, {**_TEMP, "translation_key": "dhw_set_temp"}),
+        ("compBlockTime:", 16, 4, "hex2int", 1, {"translation_key": "comp_block_time"}),
+        ("out:", 20, 4, "raw", 1, {"translation_key": "dhw_out_mode"}),
+        ("heatBlockTime:", 24, 4, "hex2int", 1, {"translation_key": "heat_block_time"}),
+        ("dhwBoosterStage:", 28, 2, "hex", 1, {"translation_key": "dhw_booster_stage"}),
+        ("pasteurisationMode:", 32, 2, "hex", 1, {"translation_key": "pasteurisation_mode"}),
+        ("dhwOpMode:", 34, 2, "opmodehc", 1, {"translation_key": "dhw_op_mode"}),
         # (" x36: ", 36, 4, "raw", 1)
     ],
     "pxxF4": [
@@ -474,19 +477,19 @@ REGISTER_MAP = {
         ),
     ],
     "pxxFC": [
-        ("Weekday: ", 5, 1, "weekday", 1),
-        ("Hour:", 6, 2, "hex", 1),
-        ("Min:", 8, 2, "hex", 1),
-        ("Sec:", 10, 2, "hex", 1),
-        ("Date:", 12, 2, "year", 1),
+        ("Weekday: ", 5, 1, "weekday", 1, {"translation_key": "weekday"}),
+        ("Hour:", 6, 2, "hex", 1, {"translation_key": "clock_hour"}),
+        ("Min:", 8, 2, "hex", 1, {"translation_key": "clock_min"}),
+        ("Sec:", 10, 2, "hex", 1, {"translation_key": "clock_sec"}),
+        ("Date:", 12, 2, "year", 1, {"translation_key": "clock_date"}),
         #("/", 14, 2, "hex", 1),
         #("/", 16, 2, "hex", 1),
     ],
-    "pxxFD": [("version: ", 4, 4, "hexdate", 1)],
+    "pxxFD": [("version: ", 4, 4, "hexdate", 1, {"translation_key": "firmware_version"})],
     "pxxFE": [
-        ("HW:", 30, 2, "hex", 1),
-        ("SW:", 32, 4, "swver", 1),
-        ("Date:", 36, 22, "hex2ascii", 1),
+        ("HW:", 30, 2, "hex", 1, {"translation_key": "hw_version"}),
+        ("SW:", 32, 4, "swver", 1, {"translation_key": "sw_version"}),
+        ("Date:", 36, 22, "hex2ascii", 1, {"translation_key": "fw_date"}),
     ],
     "pxx0A0176": [
         (
