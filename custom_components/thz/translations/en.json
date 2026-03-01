@@ -1676,6 +1676,9 @@
       "holiday_end_time": {
         "name": "Holiday End Time"
       },
+      "party_time": {
+        "name": "Party Time"
+      },
       "programhc1_mo_0": {
         "name": "HC1 Program Monday 1"
       },

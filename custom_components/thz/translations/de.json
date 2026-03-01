@@ -1676,6 +1676,9 @@
       "holiday_end_time": {
         "name": "Urlaubsende Zeit"
       },
+      "party_time": {
+        "name": "Party-Zeit"
+      },
       "programhc1_mo_0": {
         "name": "HK1 Programm Montag 1"
       },
