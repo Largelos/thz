@@ -27,6 +27,7 @@ def decode_raw_value(
             - "bitX": Extracts bit number X (e.g., "bit3").
             - "nbitX": Negation of bit X (e.g., "nbit2").
             - "esp_mant": Mantissa and exponent representation.
+            - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
             - Any other: Returns hexadecimal representation.
         factor: The divisor for "hex2int" and "hex" decoding. Defaults to 1.0.
 
@@ -53,6 +54,15 @@ def decode_raw_value(
         except struct.error as err:
             raise ValueError(f"Failed to decode esp_mant value: {err}") from err
         return round(mant, 3)
+    if decode_type == "clockdate":
+        if len(raw) != 3:
+            raise ValueError(
+                f"Invalid clockdate length: expected 3 bytes, got {len(raw)}"
+            )
+        year = raw[0] + 2000
+        month = raw[1]
+        day = raw[2]
+        return f"{year:04d}-{month:02d}-{day:02d}"
 
     return raw.hex()
 

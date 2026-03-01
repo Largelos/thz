@@ -156,6 +156,7 @@ def decode_value(
             - "bitX": Extracts bit number X (e.g., "bit3").
             - "nbitX": Negation of bit X (e.g., "nbit2").
             - "esp_mant": Mantissa and exponent representation.
+            - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
             - Any other: Returns hexadecimal representation.
         factor: The divisor for "hex2int" and "hex" decoding. Defaults to 1.0.
 

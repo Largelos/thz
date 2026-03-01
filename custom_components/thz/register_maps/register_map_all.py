@@ -481,9 +481,7 @@ REGISTER_MAP = {
         ("Hour:", 6, 2, "hex", 1, {"translation_key": "clock_hour"}),
         ("Min:", 8, 2, "hex", 1, {"translation_key": "clock_min"}),
         ("Sec:", 10, 2, "hex", 1, {"translation_key": "clock_sec"}),
-        ("Date:", 12, 2, "year", 1, {"translation_key": "clock_date"}),
-        #("/", 14, 2, "hex", 1),
-        #("/", 16, 2, "hex", 1),
+        ("Date:", 12, 6, "clockdate", 1, {"translation_key": "clock_date"}),
     ],
     "pxxFD": [("version: ", 4, 4, "hexdate", 1, {"translation_key": "firmware_version"})],
     "pxxFE": [
