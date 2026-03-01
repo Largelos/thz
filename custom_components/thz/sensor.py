@@ -276,16 +276,12 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
             self._attr_name = e["name"]
 
         # Set default visibility based on entity naming conventions
+        # Uses HA's standard _attr_ pattern – no explicit @property override.
+        # See base_entity.py for rationale on avoiding @property overrides
+        # for entity_registry_enabled_default.
         self._attr_entity_registry_enabled_default = (
             not should_hide_entity_by_default(self._entity_name)
         )
-
-
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added to the registry."""
-        return self._attr_entity_registry_enabled_default
 
     @property
     def native_value(self) -> StateType | int | float | bool | str | None:

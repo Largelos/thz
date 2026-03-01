@@ -94,14 +94,6 @@
           "Baudrate": "Baud Rate"
         }
       },
-      "name": {
-        "title": "Device Name and Area",
-        "description": "Optionally give your THZ device a custom name and assign it to a Home Assistant area. This helps organize your devices in the UI.",
-        "data": {
-          "alias": "Device Name (optional)",
-          "area": "Area (optional)"
-        }
-      },
       "refresh_blocks": {
         "title": "Configure Polling Intervals",
         "description": "Set how often (in seconds) each register block should be polled from your heat pump. Lower values provide faster updates but increase system load. The write_interval controls how often writable entities (number/switch/select/time) are updated after changes.\n\nRecommended: 300-600 seconds for read blocks, 60 seconds for write interval.",

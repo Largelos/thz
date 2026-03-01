@@ -64,33 +64,6 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
         return self.async_show_form(step_id="user", data_schema=schema)
 
-    async def async_step_name(self, user_input=None) -> config_entries.ConfigFlowResult:
-        """Set connection name."""
-        # ensure connection_data exists
-        self.connection_data = getattr(self, "connection_data", {}) or {}
-
-        if user_input is not None:
-            # save alias/area and continue
-            self.connection_data["alias"] = user_input.get("alias", "").strip()
-            self.connection_data["area"] = user_input.get("area", "").strip()
-            return await self.async_step_detect_blocks()
-
-        # Get available areas
-        area_registry = ar.async_get(self.hass)
-        areas = {area.id: area.name for area in area_registry.async_list_areas()}
-        areas[""] = "-- No Area --"  # Add option for no area
-
-        schema_dict = {}
-        schema_dict[
-            vol.Optional("alias", default=self.connection_data.get("alias", ""))
-        ] = str
-        schema_dict[
-            vol.Optional("area", default=self.connection_data.get("area", ""))
-        ] = vol.In(areas)
-
-        schema = vol.Schema(schema_dict)
-        return self.async_show_form(step_id="name", data_schema=schema)
-
     async def async_step_setup_ip(
         self, user_input=None
     ) -> config_entries.ConfigFlowResult:
@@ -115,7 +88,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not errors:
                 user_input[CONF_HOST] = host  # Use stripped version
                 self.connection_data = user_input
-                return await self.async_step_name()
+                return await self.async_step_detect_blocks()
 
         schema = vol.Schema(
             {
@@ -162,7 +135,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Input for serial connection."""
         if user_input is not None:
             self.connection_data = user_input
-            return await self.async_step_name()
+            return await self.async_step_detect_blocks()
 
         ports, default_device = await self.get_ports()
 

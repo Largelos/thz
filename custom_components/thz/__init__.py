@@ -60,7 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         "THZ device fully initialized (FW %s)", device.firmware_version
     )
 
-    # --- create / update device in Home Assistant device registry using alias/area ---
+    # --- create / update device in Home Assistant device registry ---
 
     dev_reg = dr.async_get(hass)
     # prefer a stable id from the device; fall back to conn info
@@ -70,15 +70,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         or f"{conn_type}-{data.get('host') or data.get('device')}"
     )
     device_name = data.get("alias") or f"THZ {data.get('host') or data.get('device')}"
-    device_entry = dev_reg.async_get_or_create(
-        config_entry_id=config_entry.entry_id,
-        identifiers={(DOMAIN, unique_id)},
-        name=device_name,
-        manufacturer="Stiebel Eltron / Tecalor",
-        model=f"LWZ/THZ (FW: {device.firmware_version})",
-        sw_version=device.firmware_version,
-        suggested_area=data.get("area"),
-    )
+    kwargs: dict = {
+        "config_entry_id": config_entry.entry_id,
+        "identifiers": {(DOMAIN, unique_id)},
+        "name": device_name,
+        "manufacturer": "Stiebel Eltron / Tecalor",
+        "model": f"LWZ/THZ (FW: {device.firmware_version})",
+        "sw_version": device.firmware_version,
+    }
+    area = data.get("area")
+    if area:
+        kwargs["suggested_area"] = area
+    device_entry = dev_reg.async_get_or_create(**kwargs)
     _LOGGER.debug("Device registry entry created/updated: %s", device_entry.id)
 
     # 3. Load register mappings
@@ -413,7 +416,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             device = entry_data.get("device")
             if device:
                 await hass.async_add_executor_job(device.close)
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+
+        # Clean up domain-level data that was stored outside entry scope
+        for key in ("device", "write_manager", "register_manager", "device_id"):
+            hass.data[DOMAIN].pop(key, None)
 
         # Remove services if this is the last config entry
         remaining_entries = [

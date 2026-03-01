@@ -94,14 +94,6 @@
           "Baudrate": "Baudrate"
         }
       },
-      "name": {
-        "title": "Gerätename und Bereich",
-        "description": "Geben Sie Ihrem THZ-Gerät optional einen benutzerdefinierten Namen und weisen Sie es einem Home Assistant-Bereich zu. Dies hilft, Ihre Geräte in der Benutzeroberfläche zu organisieren.",
-        "data": {
-          "alias": "Gerätename (optional)",
-          "area": "Bereich (optional)"
-        }
-      },
       "refresh_blocks": {
         "title": "Abfrageintervalle konfigurieren",
         "description": "Legen Sie fest, wie oft (in Sekunden) jeder Registerblock von Ihrer Wärmepumpe abgefragt werden soll. Niedrigere Werte liefern schnellere Aktualisierungen, erhöhen aber die Systemlast. Das write_interval steuert, wie oft beschreibbare Entitäten (Nummer/Schalter/Auswahl/Zeit) nach Änderungen aktualisiert werden.\n\nEmpfohlen: 300-600 Sekunden für Leseblöcke, 60 Sekunden für Schreibintervall.",
