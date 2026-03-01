@@ -23,12 +23,12 @@ def decode_raw_value(
         raw: The raw bytes to decode.
         decode_type: The type of decoding to apply. Supported types:
             - "hex2int": Signed integer divided by factor.
-            - "hex": Unsigned integer.
+            - "hex": Unsigned integer divided by factor.
             - "bitX": Extracts bit number X (e.g., "bit3").
             - "nbitX": Negation of bit X (e.g., "nbit2").
             - "esp_mant": Mantissa and exponent representation.
             - Any other: Returns hexadecimal representation.
-        factor: The divisor for "hex2int" decoding. Defaults to 1.0.
+        factor: The divisor for "hex2int" and "hex" decoding. Defaults to 1.0.
 
     Returns:
         The decoded value (int, float, bool, or str).
@@ -36,7 +36,7 @@ def decode_raw_value(
     if decode_type == "hex2int":
         return int.from_bytes(raw, byteorder="big", signed=True) / factor
     if decode_type == "hex":
-        return int.from_bytes(raw, byteorder="big")
+        return int.from_bytes(raw, byteorder="big") / factor
     if decode_type.startswith("bit"):
         bitnum = int(decode_type[3:])
         return bool((raw[0] >> bitnum) & 0x01)

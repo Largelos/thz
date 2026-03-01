@@ -150,7 +150,7 @@ REGISTER_MAP = {
             50,
             4,
             "hex",
-            1,
+            10,
             {**_FAN_POWER, "translation_key": "output_ventilator_power"},
         ),
         (
@@ -158,7 +158,7 @@ REGISTER_MAP = {
             54,
             4,
             "hex",
-            1,
+            10,
             {**_FAN_POWER, "translation_key": "input_ventilator_power"},
         ),
         (
@@ -166,7 +166,7 @@ REGISTER_MAP = {
             58,
             4,
             "hex",
-            1,
+            10,
             {**_FAN_POWER, "translation_key": "main_ventilator_power"},
         ),
         (
@@ -300,7 +300,7 @@ REGISTER_MAP = {
             114,
             4,
             "hex",
-            10,
+            100,
             {**_PRESSURE, "translation_key": "pressure_hc"},
         ),  # board X4-1..3 sensor P4 HC water pressure
         (
