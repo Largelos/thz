@@ -1664,6 +1664,9 @@
       },
       "z_reset_last10errors": {
         "name": "Letzte 10 Fehler zurücksetzen"
+      },
+      "reset_errors": {
+        "name": "Fehler zurücksetzen"
       }
     },
     "switch": {

@@ -1664,6 +1664,9 @@
       },
       "z_reset_last10errors": {
         "name": "Reset Last 10 Errors"
+      },
+      "reset_errors": {
+        "name": "Reset Errors"
       }
     },
     "switch": {
