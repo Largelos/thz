@@ -75,7 +75,7 @@ ENTITY_TRANSLATION_KEYS = {
     "p79BoosterTimeoutHC": "booster_timeout_hc",
     # Pasteurization
     "p35PasteurisationInterval": "pasteurization_interval",
-    "p35PasteurisationTemp": "pasteurization_temp",
+    "p35PasteurisationTemp": "pasteurisation_temp",
     "p36MaxDurationDHWLoad": "max_duration_dhw_load",
     "p36DHWMaxTime": "max_duration_dhw_load",  # Alternative name
     # Fan airflow settings
