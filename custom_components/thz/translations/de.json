@@ -487,6 +487,684 @@
       },
       "lifetime_cop_total": {
         "name": "Gesamt-COP"
+      },
+      "absence_duration": {
+        "name": "Abwesenheitsdauer"
+      },
+      "airflow_calibration_interval": {
+        "name": "Volumenstrom Kalibrierungsintervall"
+      },
+      "airflow_tolerance": {
+        "name": "Volumenstrom Toleranz"
+      },
+      "base_temp": {
+        "name": "Basistemperatur"
+      },
+      "base_time_ap0": {
+        "name": "Basiszeit AP0"
+      },
+      "block_time_after_comp_start": {
+        "name": "Sperrzeit nach Kompressorstart"
+      },
+      "boost_block_time_after_hd": {
+        "name": "Sperrzeit nach HD"
+      },
+      "boost_block_time_after_pump_start": {
+        "name": "Sperrzeit nach Pumpenstart"
+      },
+      "booster_timeout_dhw": {
+        "name": "Heizstab Timeout Warmwasser"
+      },
+      "booster_timeout_hc": {
+        "name": "Heizstab Timeout HC"
+      },
+      "clock_date": {
+        "name": "Datum"
+      },
+      "clock_day": {
+        "name": "Tag"
+      },
+      "clock_hour": {
+        "name": "Uhrzeit Stunde"
+      },
+      "clock_min": {
+        "name": "Uhrzeit Minute"
+      },
+      "clock_minutes": {
+        "name": "Minuten"
+      },
+      "clock_month": {
+        "name": "Monat"
+      },
+      "clock_sec": {
+        "name": "Uhrzeit Sekunde"
+      },
+      "clock_year": {
+        "name": "Jahr"
+      },
+      "collect_limit_temp_solar": {
+        "name": "Kollektor Grenztemperatur Solar"
+      },
+      "comp_block_time": {
+        "name": "Kompressor Sperrzeit"
+      },
+      "compressor_restart_delay": {
+        "name": "Kompressor Wiederanlaufverzögerung"
+      },
+      "cooling_hours": {
+        "name": "Kühlstunden"
+      },
+      "defrost_evaporator": {
+        "name": "Verdampfer Abtauung"
+      },
+      "defrost_start_threshold": {
+        "name": "Abtauschwelle"
+      },
+      "delay_comp_start_solar": {
+        "name": "Verzögerung Kompressorstart Solar"
+      },
+      "dhw_booster_stage": {
+        "name": "Warmwasser Heizstab Stufe"
+      },
+      "dhw_hours": {
+        "name": "Warmwasserstunden"
+      },
+      "dhw_op_mode": {
+        "name": "Warmwasser Betriebsmodus"
+      },
+      "dhw_out_mode": {
+        "name": "Warmwasser Ausgangsmodus"
+      },
+      "dhw_set_temp": {
+        "name": "Warmwasser Solltemperatur"
+      },
+      "dhw_stage": {
+        "name": "Warmwasser Stufe"
+      },
+      "dhw_temp_day": {
+        "name": "Warmwassertemperatur Tag"
+      },
+      "dhw_temp_manual": {
+        "name": "Warmwassertemperatur Manuell"
+      },
+      "dhw_temp_night": {
+        "name": "Warmwassertemperatur Nacht"
+      },
+      "dhw_temp_solar_mode": {
+        "name": "Warmwassertemperatur Solarbetrieb"
+      },
+      "dhw_temp_standby": {
+        "name": "Warmwassertemperatur Standby"
+      },
+      "diff_temp_solar_loading": {
+        "name": "Differenztemperatur Solarladen"
+      },
+      "dual_mode_point": {
+        "name": "Bivalenzpunkt"
+      },
+      "duration_until_absence_start": {
+        "name": "Dauer bis Abwesenheitsbeginn"
+      },
+      "enable_absence_prog": {
+        "name": "Abwesenheitsprogramm aktiv"
+      },
+      "enable_dhw_buffer": {
+        "name": "Warmwasserspeicher aktivieren"
+      },
+      "enable_solar": {
+        "name": "Solar aktivieren"
+      },
+      "end_time_ap0": {
+        "name": "Endzeit AP0"
+      },
+      "exhaust_fan_airflow_cal": {
+        "name": "Abluftlüfter Volumenstrom (kalibriert)"
+      },
+      "exhaust_fan_airflow_set": {
+        "name": "Abluftlüfter Sollvolumenstrom"
+      },
+      "exhaust_fan_speed": {
+        "name": "Abluftlüfter Drehzahl"
+      },
+      "exhaust_fan_speed0": {
+        "name": "Abluftlüfter Drehzahl 0%"
+      },
+      "exhaust_fan_speed200": {
+        "name": "Abluftlüfter Drehzahl 200"
+      },
+      "exhaust_fan_speed_cal": {
+        "name": "Abluftlüfter Drehzahl (kalibriert)"
+      },
+      "exhaust_fan_speed_target": {
+        "name": "Abluftlüfter Solldrehzahl"
+      },
+      "fan_stage1_airflow_inlet": {
+        "name": "Lüfterstufe 1 Zuluft"
+      },
+      "fan_stage1_airflow_outlet": {
+        "name": "Lüfterstufe 1 Abluft"
+      },
+      "fan_stage2_airflow_inlet": {
+        "name": "Lüfterstufe 2 Zuluft"
+      },
+      "fan_stage2_airflow_outlet": {
+        "name": "Lüfterstufe 2 Abluft"
+      },
+      "fan_stage3_airflow_inlet": {
+        "name": "Lüfterstufe 3 Zuluft"
+      },
+      "fan_stage3_airflow_outlet": {
+        "name": "Lüfterstufe 3 Abluft"
+      },
+      "fan_stage_day": {
+        "name": "Lüfterstufe Tag"
+      },
+      "fan_stage_manual": {
+        "name": "Lüfterstufe Manuell"
+      },
+      "fan_stage_night": {
+        "name": "Lüfterstufe Nacht"
+      },
+      "fan_stage_standby": {
+        "name": "Lüfterstufe Standby"
+      },
+      "fault0_code": {
+        "name": "Fehler 0 Code"
+      },
+      "fault0_date": {
+        "name": "Fehler 0 Datum"
+      },
+      "fault0_time": {
+        "name": "Fehler 0 Zeit"
+      },
+      "fault1_code": {
+        "name": "Fehler 1 Code"
+      },
+      "fault1_date": {
+        "name": "Fehler 1 Datum"
+      },
+      "fault1_time": {
+        "name": "Fehler 1 Zeit"
+      },
+      "fault2_code": {
+        "name": "Fehler 2 Code"
+      },
+      "fault2_date": {
+        "name": "Fehler 2 Datum"
+      },
+      "fault2_time": {
+        "name": "Fehler 2 Zeit"
+      },
+      "fault3_code": {
+        "name": "Fehler 3 Code"
+      },
+      "fault3_date": {
+        "name": "Fehler 3 Datum"
+      },
+      "fault3_time": {
+        "name": "Fehler 3 Zeit"
+      },
+      "firmware_version": {
+        "name": "Firmware Version"
+      },
+      "flow_proportion_hc1": {
+        "name": "Flussanteil HC1"
+      },
+      "flow_proportion_hc2": {
+        "name": "Flussanteil HC2"
+      },
+      "fw_date": {
+        "name": "Firmware Datum"
+      },
+      "gradient_hc1": {
+        "name": "Heizkurve Neigung HC1"
+      },
+      "gradient_hc2": {
+        "name": "Heizkurve Neigung HC2"
+      },
+      "hc_stage": {
+        "name": "Heizkreis Stufe"
+      },
+      "hc_temp_manual": {
+        "name": "Heizkreis Temperatur Manuell"
+      },
+      "heat_block_time": {
+        "name": "Heizung Sperrzeit"
+      },
+      "heat_request": {
+        "name": "Wärmeanforderung"
+      },
+      "heat_request2": {
+        "name": "Wärmeanforderung 2"
+      },
+      "heat_stage_control_modul": {
+        "name": "Heizstufensteuerung"
+      },
+      "heating_hours": {
+        "name": "Heizstunden"
+      },
+      "hw_version": {
+        "name": "Hardware Version"
+      },
+      "hyst_diff_temp_solar": {
+        "name": "Hysterese Differenztemperatur Solar"
+      },
+      "hysteresis_1": {
+        "name": "Hysterese 1"
+      },
+      "hysteresis_2": {
+        "name": "Hysterese 2"
+      },
+      "hysteresis_3": {
+        "name": "Hysterese 3"
+      },
+      "hysteresis_4": {
+        "name": "Hysterese 4"
+      },
+      "hysteresis_5": {
+        "name": "Hysterese 5"
+      },
+      "hysteresis_6": {
+        "name": "Hysterese 6"
+      },
+      "hysteresis_7": {
+        "name": "Hysterese 7"
+      },
+      "hysteresis_8": {
+        "name": "Hysterese 8"
+      },
+      "hysteresis_asymmetry": {
+        "name": "Hysterese Asymmetrie"
+      },
+      "hysteresis_dhw": {
+        "name": "Hysterese Warmwasser"
+      },
+      "integral_component": {
+        "name": "Integralanteil"
+      },
+      "last_errors": {
+        "name": "Letzte Fehler"
+      },
+      "limit_temp_condenser_defrost_term": {
+        "name": "Temp.-Limit Kondensator Abtau-Abbruch"
+      },
+      "limit_temp_condenser_elect_boost": {
+        "name": "Temp.-Limit Kondensator Heizstab"
+      },
+      "low_end_hc1": {
+        "name": "Heizkurve Fußpunkt HC1"
+      },
+      "low_end_hc2": {
+        "name": "Heizkurve Fußpunkt HC2"
+      },
+      "main_fan_speed": {
+        "name": "Hauptlüfter Drehzahl"
+      },
+      "max_boost_stages": {
+        "name": "Max. Heizstabstufen"
+      },
+      "max_boost_stages_dhw": {
+        "name": "Max. Heizstabstufen Warmwasser"
+      },
+      "max_defrost_duration_aa_exchenger": {
+        "name": "Max. Abtaudauer Wärmetauscher"
+      },
+      "max_duration_dhw_load": {
+        "name": "Max. Warmwasserladezeit"
+      },
+      "max_heat_flow_temp": {
+        "name": "Max. Vorlauftemperatur"
+      },
+      "max_pump_cycles": {
+        "name": "Max. Pumpenzyklen"
+      },
+      "max_set_heat_flow_temp_hc1": {
+        "name": "Max. Vorlauftemperatur HC1"
+      },
+      "max_set_heat_flow_temp_hc2": {
+        "name": "Max. Vorlauftemperatur HC2"
+      },
+      "max_time_defrost_evaporator": {
+        "name": "Max. Abtauzeit Verdampfer"
+      },
+      "min_pump_cycles": {
+        "name": "Min. Pumpenzyklen"
+      },
+      "min_set_heat_flow_temp_hc1": {
+        "name": "Min. Vorlauftemperatur HC1"
+      },
+      "min_set_heat_flow_temp_hc2": {
+        "name": "Min. Vorlauftemperatur HC2"
+      },
+      "number_of_faults": {
+        "name": "Anzahl Fehler"
+      },
+      "op_mode": {
+        "name": "Betriebsmodus"
+      },
+      "operating_hours1": {
+        "name": "Betriebsstunden 1"
+      },
+      "operating_hours2": {
+        "name": "Betriebsstunden 2"
+      },
+      "out_temp_filter_time": {
+        "name": "Außentemperatur Filterzeit"
+      },
+      "out_temp_max_pump_cycles": {
+        "name": "Außentemperatur Max. Pumpenzyklen"
+      },
+      "out_temp_min_pump_cycles": {
+        "name": "Außentemperatur Min. Pumpenzyklen"
+      },
+      "party_time": {
+        "name": "Party-Zeit"
+      },
+      "passive_cooling": {
+        "name": "Passive Kühlung"
+      },
+      "pasteurisation_mode": {
+        "name": "Pasteurisierungsmodus"
+      },
+      "pasteurisation_temp": {
+        "name": "Pasteurisierungstemperatur"
+      },
+      "pasteurization_interval": {
+        "name": "Pasteurisierungsintervall"
+      },
+      "peak_temp": {
+        "name": "Spitzentemperatur"
+      },
+      "prog_dhw_enable": {
+        "name": "Programm WW aktiv"
+      },
+      "prog_dhw_end_time": {
+        "name": "Programm WW Endzeit"
+      },
+      "prog_dhw_friday": {
+        "name": "Programm WW Freitag"
+      },
+      "prog_dhw_monday": {
+        "name": "Programm WW Montag"
+      },
+      "prog_dhw_saturday": {
+        "name": "Programm WW Samstag"
+      },
+      "prog_dhw_start_time": {
+        "name": "Programm WW Startzeit"
+      },
+      "prog_dhw_sunday": {
+        "name": "Programm WW Sonntag"
+      },
+      "prog_dhw_thursday": {
+        "name": "Programm WW Donnerstag"
+      },
+      "prog_dhw_tuesday": {
+        "name": "Programm WW Dienstag"
+      },
+      "prog_dhw_wednesday": {
+        "name": "Programm WW Mittwoch"
+      },
+      "prog_fan1_enable": {
+        "name": "Programm Lüfter 1 aktiv"
+      },
+      "prog_fan1_end_time": {
+        "name": "Programm Lüfter 1 Endzeit"
+      },
+      "prog_fan1_friday": {
+        "name": "Programm Lüfter 1 Freitag"
+      },
+      "prog_fan1_monday": {
+        "name": "Programm Lüfter 1 Montag"
+      },
+      "prog_fan1_saturday": {
+        "name": "Programm Lüfter 1 Samstag"
+      },
+      "prog_fan1_start_time": {
+        "name": "Programm Lüfter 1 Startzeit"
+      },
+      "prog_fan1_sunday": {
+        "name": "Programm Lüfter 1 Sonntag"
+      },
+      "prog_fan1_thursday": {
+        "name": "Programm Lüfter 1 Donnerstag"
+      },
+      "prog_fan1_tuesday": {
+        "name": "Programm Lüfter 1 Dienstag"
+      },
+      "prog_fan1_wednesday": {
+        "name": "Programm Lüfter 1 Mittwoch"
+      },
+      "prog_fan2_enable": {
+        "name": "Programm Lüfter 2 aktiv"
+      },
+      "prog_fan2_end_time": {
+        "name": "Programm Lüfter 2 Endzeit"
+      },
+      "prog_fan2_friday": {
+        "name": "Programm Lüfter 2 Freitag"
+      },
+      "prog_fan2_monday": {
+        "name": "Programm Lüfter 2 Montag"
+      },
+      "prog_fan2_saturday": {
+        "name": "Programm Lüfter 2 Samstag"
+      },
+      "prog_fan2_start_time": {
+        "name": "Programm Lüfter 2 Startzeit"
+      },
+      "prog_fan2_sunday": {
+        "name": "Programm Lüfter 2 Sonntag"
+      },
+      "prog_fan2_thursday": {
+        "name": "Programm Lüfter 2 Donnerstag"
+      },
+      "prog_fan2_tuesday": {
+        "name": "Programm Lüfter 2 Dienstag"
+      },
+      "prog_fan2_wednesday": {
+        "name": "Programm Lüfter 2 Mittwoch"
+      },
+      "prog_hc1_enable": {
+        "name": "Programm HC1 aktiv"
+      },
+      "prog_hc1_end_time": {
+        "name": "Programm HC1 Endzeit"
+      },
+      "prog_hc1_friday": {
+        "name": "Programm HC1 Freitag"
+      },
+      "prog_hc1_monday": {
+        "name": "Programm HC1 Montag"
+      },
+      "prog_hc1_saturday": {
+        "name": "Programm HC1 Samstag"
+      },
+      "prog_hc1_start_time": {
+        "name": "Programm HC1 Startzeit"
+      },
+      "prog_hc1_sunday": {
+        "name": "Programm HC1 Sonntag"
+      },
+      "prog_hc1_thursday": {
+        "name": "Programm HC1 Donnerstag"
+      },
+      "prog_hc1_tuesday": {
+        "name": "Programm HC1 Dienstag"
+      },
+      "prog_hc1_wednesday": {
+        "name": "Programm HC1 Mittwoch"
+      },
+      "prog_hc2_enable": {
+        "name": "Programm HC2 aktiv"
+      },
+      "prog_hc2_end_time": {
+        "name": "Programm HC2 Endzeit"
+      },
+      "prog_hc2_friday": {
+        "name": "Programm HC2 Freitag"
+      },
+      "prog_hc2_monday": {
+        "name": "Programm HC2 Montag"
+      },
+      "prog_hc2_saturday": {
+        "name": "Programm HC2 Samstag"
+      },
+      "prog_hc2_start_time": {
+        "name": "Programm HC2 Startzeit"
+      },
+      "prog_hc2_sunday": {
+        "name": "Programm HC2 Sonntag"
+      },
+      "prog_hc2_thursday": {
+        "name": "Programm HC2 Donnerstag"
+      },
+      "prog_hc2_tuesday": {
+        "name": "Programm HC2 Dienstag"
+      },
+      "prog_hc2_wednesday": {
+        "name": "Programm HC2 Mittwoch"
+      },
+      "prog_state_dhw": {
+        "name": "Programmstatus WW"
+      },
+      "prog_state_fan": {
+        "name": "Programmstatus Lüfter"
+      },
+      "prog_state_hc": {
+        "name": "Programmstatus HC"
+      },
+      "restart_before_setback_end": {
+        "name": "Neustart vor Absenkende"
+      },
+      "room_influence_hc1": {
+        "name": "Raumeinfluss HC1"
+      },
+      "room_influence_hc2": {
+        "name": "Raumeinfluss HC2"
+      },
+      "room_temp_day": {
+        "name": "Raumtemperatur Tag"
+      },
+      "room_temp_night": {
+        "name": "Raumtemperatur Nacht"
+      },
+      "room_temp_standby": {
+        "name": "Raumtemperatur Standby"
+      },
+      "start_dry_heat": {
+        "name": "Trockenheizbeginn"
+      },
+      "start_time_ap0": {
+        "name": "Startzeit AP0"
+      },
+      "status_afc": {
+        "name": "AFC Status"
+      },
+      "status_ap0": {
+        "name": "Status AP0"
+      },
+      "summer_mode_hysteresis": {
+        "name": "Sommerbetrieb Hysterese"
+      },
+      "summer_mode_temp": {
+        "name": "Sommerbetrieb Temperatur"
+      },
+      "supply_fan_airflow_cal": {
+        "name": "Zuluftlüfter Volumenstrom (kalibriert)"
+      },
+      "supply_fan_airflow_set": {
+        "name": "Zuluftlüfter Sollvolumenstrom"
+      },
+      "supply_fan_speed": {
+        "name": "Zuluftlüfter Drehzahl"
+      },
+      "supply_fan_speed0": {
+        "name": "Zuluftlüfter Drehzahl 0%"
+      },
+      "supply_fan_speed200": {
+        "name": "Zuluftlüfter Drehzahl 200"
+      },
+      "supply_fan_speed_cal": {
+        "name": "Zuluftlüfter Drehzahl (kalibriert)"
+      },
+      "supply_fan_speed_target": {
+        "name": "Zuluftlüfter Solldrehzahl"
+      },
+      "suppress_temp_capt_pump_start": {
+        "name": "Temperaturfühler Unterdrückung bei Pumpstart"
+      },
+      "sw_version": {
+        "name": "Software Version"
+      },
+      "temp_duration": {
+        "name": "Temperaturdauer"
+      },
+      "temp_increase": {
+        "name": "Temperaturerhöhung"
+      },
+      "temp_limit_boost_dhw": {
+        "name": "Temp.-Limit Heizstab Warmwasser"
+      },
+      "time_to_calibration": {
+        "name": "Zeit bis Kalibrierung"
+      },
+      "unsched_vent_0": {
+        "name": "Außerplan Lüftung 0"
+      },
+      "unsched_vent_1": {
+        "name": "Außerplan Lüftung 1"
+      },
+      "unsched_vent_2": {
+        "name": "Außerplan Lüftung 2"
+      },
+      "unsched_vent_3": {
+        "name": "Außerplan Lüftung 3"
+      },
+      "up_temp_limit_defrost_evaporator_end": {
+        "name": "Temp.-Limit Verdampfer Abtauende"
+      },
+      "user_set_fan_remaining_time": {
+        "name": "Verbleibende Zeit Lüfterstufe"
+      },
+      "user_set_fan_stage": {
+        "name": "Benutzerdefinierte Lüfterstufe"
+      },
+      "volume_flow_filter_replacement": {
+        "name": "Volumenstrom Filterwechsel"
+      },
+      "weekday": {
+        "name": "Wochentag"
+      },
+      "x08": {
+        "name": "Register X08"
+      },
+      "x50": {
+        "name": "Register X50"
+      },
+      "x54": {
+        "name": "Register X54"
+      },
+      "x58": {
+        "name": "Register X58"
+      },
+      "x60": {
+        "name": "Register X60"
+      },
+      "x64": {
+        "name": "Register X64"
+      },
+      "x66": {
+        "name": "Register X66"
+      },
+      "x70": {
+        "name": "Register X70"
+      },
+      "x72": {
+        "name": "Register X72"
+      },
+      "x76": {
+        "name": "Register X76"
       }
     },
     "number": {
@@ -974,6 +1652,18 @@
     "select": {
       "op_mode": {
         "name": "Betriebsart"
+      },
+      "z_control_valve_dhw": {
+        "name": "Steuerventil Warmwasser"
+      },
+      "z_pump_dhw": {
+        "name": "Pumpe Warmwasser"
+      },
+      "z_pump_hc": {
+        "name": "Pumpe Heizkreis"
+      },
+      "z_reset_last10errors": {
+        "name": "Letzte 10 Fehler zurücksetzen"
       }
     },
     "switch": {

@@ -217,6 +217,12 @@ ENTITY_TRANSLATION_KEYS = {
     # Other
     "pOvenFireplace": "oven_fireplace",
     "party-time": "party_time",
+    # Technician / X39 controls
+    "ResetErrors": "reset_errors",
+    "zControlValveDHW": "z_control_valve_dhw",
+    "zPumpDHW": "z_pump_dhw",
+    "zPumpHC": "z_pump_hc",
+    "zResetLast10errors": "z_reset_last10errors",
     # HC1 Program schedules (individual day programs)
     "programHC1_Mo_0": "programhc1_mo_0",
     "programHC1_Mo_1": "programhc1_mo_1",
