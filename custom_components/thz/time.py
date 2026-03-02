@@ -327,7 +327,7 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
             translation_key = f"{base_translation_key}_{time_type}"
         else:
             translation_key = None
-        
+
         # Initialize base class with common properties
         super().__init__(
             name=name,

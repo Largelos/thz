@@ -134,7 +134,7 @@ async def async_setup_entry(
                 )
             )
     async_add_entities(sensors, True)
-    
+
     # Set up COP sensors separately
     await async_setup_cop_sensors(hass, config_entry, async_add_entities)
 
