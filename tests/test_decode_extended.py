@@ -260,3 +260,52 @@ class TestDecodeValueBoundaries:
         assert decode_value(raw, "bit1") == True
         assert decode_value(raw, "bit2") == False
         assert decode_value(raw, "bit3") == True
+
+
+class TestDecodeOpmodehc:
+    """Tests for opmodehc decoding (HC operating mode)."""
+
+    def test_normal_mode(self):
+        """Test decoding value 1 (normal mode)."""
+        raw = b'\x00\x01'
+        assert decode_value(raw, "opmodehc") == "normal"
+
+    def test_setback_mode(self):
+        """Test decoding value 2 (setback mode)."""
+        raw = b'\x00\x02'
+        assert decode_value(raw, "opmodehc") == "setback"
+
+    def test_standby_mode(self):
+        """Test decoding value 3 (standby mode)."""
+        raw = b'\x00\x03'
+        assert decode_value(raw, "opmodehc") == "standby"
+
+    def test_unknown_mode_returns_key(self):
+        """Test that an unmapped value returns its string representation."""
+        raw = b'\x00\x0f'  # value 15, not in map
+        result = decode_value(raw, "opmodehc")
+        assert result == "15"
+
+
+class TestDecode8Party:
+    """Tests for 8party decoding (party time in minutes)."""
+
+    def test_zero_minutes(self):
+        """Test decoding zero party time."""
+        raw = b'\x00\x00\x00\x00'
+        assert decode_value(raw, "8party") == 0
+
+    def test_sixty_minutes(self):
+        """Test decoding 60 minutes."""
+        raw = b'\x00\x00\x00\x3c'  # 60 = 0x3c
+        assert decode_value(raw, "8party") == 60
+
+    def test_max_party_time(self):
+        """Test decoding 1439 minutes (23:59)."""
+        raw = b'\x00\x00\x05\x9f'  # 1439 = 0x059f
+        assert decode_value(raw, "8party") == 1439
+
+    def test_factor_applied(self):
+        """Test that factor is applied, consistent with unsigned integer decode types."""
+        raw = b'\x00\x00\x00\x3c'  # 60
+        assert decode_value(raw, "8party", 10) == 6.0

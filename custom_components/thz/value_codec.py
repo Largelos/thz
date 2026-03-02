@@ -8,10 +8,82 @@ from __future__ import annotations
 
 import logging
 import struct
+from collections.abc import Callable
 
 from .value_maps import SELECT_MAP
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _dec_hex2int(raw: bytes, factor: float) -> int | float:
+    return int.from_bytes(raw, byteorder="big", signed=True) / factor
+
+
+def _dec_hex(raw: bytes, factor: float) -> int | float:
+    return int.from_bytes(raw, byteorder="big") / factor
+
+
+def _dec_esp_mant(raw: bytes, factor: float) -> float:
+    if len(raw) != 4:
+        raise ValueError(
+            f"Invalid esp_mant length: expected 4 bytes, got {len(raw)}"
+        )
+    try:
+        mant = struct.unpack(">f", raw)[0]
+    except struct.error as err:
+        raise ValueError(f"Failed to decode esp_mant value: {err}") from err
+    return round(mant, 3)
+
+
+def _dec_hexdate(raw: bytes, factor: float) -> str:
+    val = int.from_bytes(raw, byteorder="big")
+    return f"{val // 100:02d}.{val % 100:02d}"
+
+
+def _dec_clockdate(raw: bytes, factor: float) -> str:
+    if len(raw) != 3:
+        raise ValueError(
+            f"Invalid clockdate length: expected 3 bytes, got {len(raw)}"
+        )
+    year = raw[0] + 2000
+    month = raw[1]
+    day = raw[2]
+    return f"{year:04d}-{month:02d}-{day:02d}"
+
+
+def _dec_somwinmode(raw: bytes, factor: float) -> str:
+    key = raw.hex()
+    return SELECT_MAP.get("SomWinMode", {}).get(key, key)
+
+
+def _dec_weekday(raw: bytes, factor: float) -> str:
+    key = str(int.from_bytes(raw, byteorder="big"))
+    return SELECT_MAP.get("weekday", {}).get(key, key)
+
+
+def _dec_opmodehc(raw: bytes, factor: float) -> str:
+    key = str(int.from_bytes(raw, byteorder="big"))
+    return SELECT_MAP.get("OpModeHC", {}).get(key, key)
+
+
+def _dec_party_time(raw: bytes, factor: float) -> int | float:
+    return int.from_bytes(raw, byteorder="big") / factor
+
+
+# Dispatch table mapping exact decode_type strings to their handler functions.
+# For prefix-based types ("bit*", "nbit*") see decode_raw_value() below.
+# Note: "8party" is the protocol-defined decode_type string used in register maps.
+_DECODE_DISPATCH: dict[str, Callable[[bytes, float], int | float | bool | str]] = {
+    "hex2int": _dec_hex2int,
+    "hex": _dec_hex,
+    "esp_mant": _dec_esp_mant,
+    "hexdate": _dec_hexdate,
+    "clockdate": _dec_clockdate,
+    "somwinmode": _dec_somwinmode,
+    "weekday": _dec_weekday,
+    "opmodehc": _dec_opmodehc,
+    "8party": _dec_party_time,
+}
 
 
 def decode_raw_value(
@@ -32,51 +104,24 @@ def decode_raw_value(
             - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
             - "somwinmode": Map lookup for summer/winter mode.
             - "weekday": Map lookup for day of week.
+            - "opmodehc": Map lookup for HC operating mode.
+            - "8party": Unsigned integer (party time in minutes).
             - Any other: Returns hexadecimal representation.
-        factor: The divisor for "hex2int" and "hex" decoding. Defaults to 1.0.
+        factor: The divisor for "hex2int", "hex", and "8party" decoding.
+            Defaults to 1.0.
 
     Returns:
         The decoded value (int, float, bool, or str).
     """
-    if decode_type == "hex2int":
-        return int.from_bytes(raw, byteorder="big", signed=True) / factor
-    if decode_type == "hex":
-        return int.from_bytes(raw, byteorder="big") / factor
-    if decode_type.startswith("bit"):
-        bitnum = int(decode_type[3:])
-        return bool((raw[0] >> bitnum) & 0x01)
+    handler = _DECODE_DISPATCH.get(decode_type)
+    if handler is not None:
+        return handler(raw, factor)
     if decode_type.startswith("nbit"):
         bitnum = int(decode_type[4:])
         return not bool((raw[0] >> bitnum) & 0x01)
-    if decode_type == "esp_mant":
-        if len(raw) != 4:
-            raise ValueError(
-                f"Invalid esp_mant length: expected 4 bytes, got {len(raw)}"
-            )
-        try:
-            mant = struct.unpack(">f", raw)[0]
-        except struct.error as err:
-            raise ValueError(f"Failed to decode esp_mant value: {err}") from err
-        return round(mant, 3)
-    if decode_type == "hexdate":
-        val = int.from_bytes(raw, byteorder="big")
-        return f"{val // 100:02d}.{val % 100:02d}"
-    if decode_type == "clockdate":
-        if len(raw) != 3:
-            raise ValueError(
-                f"Invalid clockdate length: expected 3 bytes, got {len(raw)}"
-            )
-        year = raw[0] + 2000
-        month = raw[1]
-        day = raw[2]
-        return f"{year:04d}-{month:02d}-{day:02d}"
-    if decode_type == "somwinmode":
-        key = raw.hex()
-        return SELECT_MAP.get("SomWinMode", {}).get(key, key)
-    if decode_type == "weekday":
-        key = str(int.from_bytes(raw, byteorder="big"))
-        return SELECT_MAP.get("weekday", {}).get(key, key)
-
+    if decode_type.startswith("bit"):
+        bitnum = int(decode_type[3:])
+        return bool((raw[0] >> bitnum) & 0x01)
     return raw.hex()
 
 
