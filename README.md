@@ -4,6 +4,9 @@
 [![GitHub Release](https://img.shields.io/github/v/release/bigbadoooff/thz)](https://github.com/bigbadoooff/thz/releases)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+> **Version 0.3.0-alpha** — See [CHANGELOG.md](CHANGELOG.md) for the full list of new
+> features and breaking changes in this release.
+
 ## Introduction
 
 This is a custom Home Assistant integration for connecting Stiebel Eltron LWZ or Tecalor THZ heat pumps to Home Assistant. The integration enables comprehensive monitoring and control of your heat pump system directly from your Home Assistant instance.
@@ -12,7 +15,7 @@ The integration communicates with the heat pump using the serial protocol, suppo
 
 **Origin**: This integration is based on the FHEM-Module developed by Immi, adapted for Home Assistant with modern async architecture and full UI configuration support.
 
-**V0.2 is a big release that fixes most of the known errors. A few translation strings are still missing and some sensor values are off either in unit or in size. I will fix that one by one.**
+**V0.3 alpha** adds passive cooling control, a calendar platform for schedule visualisation, full diagnostics support, COP sensors, energy sensors via paired-block reads, and many reliability improvements. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Features
 
@@ -23,11 +26,14 @@ The integration communicates with the heat pump using the serial protocol, suppo
 - ✅ **Sensor Platform**: Monitor various heat pump parameters (temperatures, pressures, operating states, etc.)
 - ✅ **Switch Platform**: Control heat pump functions on/off
 - ✅ **Number Platform**: Adjust numeric settings and parameters
-- ✅ **Select Platform**: Choose between predefined options for various settings
+- ✅ **Select Platform**: Choose between predefined options for various settings — including **passive cooling mode** (firmware 4.39/5.39)
 - ✅ **Time Platform**: Set time-based parameters, schedules and programs
+- ✅ **Calendar Platform**: Visualise heating, DHW, and ventilation program schedules as recurring calendar events
+- ✅ **Diagnostics**: Download a diagnostics report for troubleshooting (via Settings → Devices & Services)
 - ✅ **Device Registry Integration**: Proper device identification in Home Assistant
-- ✅ **Automatic Polling**: Regular updates of sensor values
+- ✅ **Per-Block Polling Intervals**: Each register block has its own configurable poll interval
 - ✅ **Smart Entity Management**: Non-essential entities are hidden by default to reduce clutter
+- ✅ **Raw Register Service**: `thz.read_raw_register` service for debugging firmware-specific register layouts
 
 ### Hidden Entities by Default
 
@@ -70,13 +76,57 @@ Monthly and Yearly COP sensors automatically reset at the start of each month/ye
 
 COP sensors require energy sensors to be available on your device, typically present in firmware 4.39 and higher.
 
+### Passive Cooling (firmware 4.39 / 5.39)
+
+For devices running firmware 4.39 or 5.39, a **Passive Cooling** select entity is available to control how the heat pump uses its passive cooling capability. Available modes:
+
+| Mode | Description |
+|------|-------------|
+| `off` | Passive cooling disabled |
+| `supply_air` | Cool via supply air only |
+| `exhaust_air` | Cool via exhaust air only |
+| `bypass` | Bypass mode |
+| `auto` | Automatic selection |
+
+A corresponding energy sensor `sCoolHCTotal` tracks total passive cooling energy on firmware 5.39.
+
+### Calendar Schedules
+
+Heating, DHW, and ventilation programme schedules are visible in Home Assistant's **Calendar** view as recurring weekly events. Each slot shows the start/end time and active days of the week.
+
+### Diagnostics
+
+The integration supports Home Assistant's built-in diagnostics download:
+
+1. Go to **Settings** → **Devices & Services** → **THZ**
+2. Click on your heat pump device
+3. Click **Download Diagnostics**
+
+The report includes firmware version, connection status, coordinator last-update times, and redacted hex dumps of all currently-polled register blocks. This information is useful when reporting bugs.
+
+### Developer: Raw Register Service
+
+Use the `thz.read_raw_register` service to read any raw register block from the heat pump for debugging or firmware research. See [docs/read-raw-register-service.md](docs/read-raw-register-service.md) for full documentation.
+
 ### Planned Features
 
-- 🔄 make sure all Sensor values are interpreted correctly
-- 🔄 Improve Settings for Polling Frequency from the Device
-- 🔄 create climate entities for smoother interaction
+- 🔄 Make sure all sensor values are interpreted correctly across all firmware versions
+- 🔄 Improve settings for polling frequency from the device
+- 🔄 Create climate entities for smoother interaction with Home Assistant's climate card
 
 ## Compatibility
+
+### Supported Firmware Versions
+
+The register maps and write maps in this release target the following firmware families:
+
+| Firmware | Notes |
+|----------|-------|
+| 2.06     | Full support (sensors + write entities) |
+| 2.14 / 2.14j | Full support (sensors + write entities) |
+| 4.39     | Full support including energy sensors, COP, and passive cooling |
+| 5.39     | Full support including passive cooling energy sensor (`sCoolHCTotal`) |
+| Other    | Falls back to 5.39-like configuration — may work partially |
 
 ### Confirmed Working Devices
 
