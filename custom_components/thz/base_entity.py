@@ -51,7 +51,8 @@ class THZBaseEntity(Entity):
             device_id: The device identifier for registry linking.
             icon: Optional icon override (defaults to "mdi:eye").
             unique_id: Optional unique ID (auto-generated if not provided).
-            scan_interval: Update interval in seconds (uses DEFAULT_UPDATE_INTERVAL if not provided).
+            scan_interval: Update interval in seconds (uses DEFAULT_UPDATE_INTERVAL if
+                not provided).
             translation_key: Optional translation key for localization.
         """
         self._command = command
@@ -59,11 +60,13 @@ class THZBaseEntity(Entity):
         self._device_id = device_id
         self._attr_icon = icon or "mdi:eye"
 
-        # Per Home Assistant documentation, has_entity_name=True is MANDATORY for new integrations.
+        # Per Home Assistant documentation, has_entity_name=True is MANDATORY for
+        # new integrations.
         # See: https://developers.home-assistant.io/docs/core/entity/#entity-naming
         #
         # CRITICAL: Home Assistant ignores translation_key when _attr_name is set!
-        # The fix: Only set _attr_translation_key (not _attr_name) when translation is available.
+        # The fix: Only set _attr_translation_key (not _attr_name) when translation
+        # is available.
         # When no translation: set _attr_name as fallback.
         if translation_key is not None:
             self._attr_translation_key = translation_key
@@ -87,7 +90,9 @@ class THZBaseEntity(Entity):
         )
 
         # Store update interval for use in async_added_to_hass
-        interval = scan_interval if scan_interval is not None else DEFAULT_UPDATE_INTERVAL
+        interval = (
+            scan_interval if scan_interval is not None else DEFAULT_UPDATE_INTERVAL
+        )
         self._update_interval = timedelta(seconds=interval)
         self._unsub_update: Callable[[], None] | None = None
 
@@ -95,7 +100,9 @@ class THZBaseEntity(Entity):
         # Uses HA's standard _attr_ pattern – do NOT add an explicit @property
         # override; it conflicts with HA's __init_subclass__ CachedProperty
         # mechanism and can silently default to True on derived entity classes.
-        self._attr_entity_registry_enabled_default = not should_hide_entity_by_default(name)
+        self._attr_entity_registry_enabled_default = not should_hide_entity_by_default(
+            name
+        )
 
         _LOGGER.debug(
             "Entity %s: entity_registry_enabled_default=%s (hide=%s)",

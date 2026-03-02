@@ -102,10 +102,11 @@ async def async_setup_entry(
             # FHEM nibble-offset convention: each register offset is a nibble (4-bit)
             # position in the raw hex string.  Two consecutive nibble offsets share the
             # same byte: the EVEN offset is the HIGH nibble (bits 4-7 of the byte) and
-            # the ODD offset is the LOW nibble (bits 0-3).  Python converts these to byte
-            # offsets with `offset // 2`, which maps both nibbles to the same byte.
+            # the ODD offset is the LOW nibble (bits 0-3).  Python converts these to
+            # byte offsets with `offset // 2`, which maps both nibbles to the same byte.
             # For single-nibble bit-typed registers at an EVEN offset we must shift the
-            # bit number up by 4 so that bit operations access the correct half of the byte.
+            # bit number up by 4 so that bit operations access the correct half of the
+            # byte.
             effective_decode = decode_type
             if length == 1 and offset % 2 == 0:
                 if decode_type.startswith("bit") and not decode_type.startswith("nbit"):
@@ -154,7 +155,8 @@ def decode_value(
             - "bitX": Extracts bit number X (e.g., "bit3").
             - "nbitX": Negation of bit X (e.g., "nbit2").
             - "esp_mant": Mantissa and exponent representation.
-            - "hexdate": 2-byte unsigned int formatted as "DD.MM" (value/100 . value%100).
+            - "hexdate": 2-byte unsigned int formatted as "DD.MM"
+              (value/100 . value%100).
             - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
             - "somwinmode": Map lookup for summer/winter mode.
             - "weekday": Map lookup for day of week.
@@ -359,7 +361,8 @@ class THZGenericSensor(CoordinatorEntity, SensorEntity):
         Returns:
             A string representing the unique ID of the sensor.
         """
-        return f"thz_{self._block}_{self._offset}_{self._entity_name.lower().replace(' ', '_')}"
+        name_slug = self._entity_name.lower().replace(" ", "_")
+        return f"thz_{self._block}_{self._offset}_{name_slug}"
 
 
     @property

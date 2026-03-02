@@ -27,7 +27,8 @@ def decode_raw_value(
             - "bitX": Extracts bit number X (e.g., "bit3").
             - "nbitX": Negation of bit X (e.g., "nbit2").
             - "esp_mant": Mantissa and exponent representation.
-            - "hexdate": 2-byte unsigned int formatted as "DD.MM" (value/100 . value%100).
+            - "hexdate": 2-byte unsigned int formatted as "DD.MM"
+              (value/100 . value%100).
             - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
             - "somwinmode": Map lookup for summer/winter mode.
             - "weekday": Map lookup for day of week.
@@ -154,7 +155,9 @@ class THZValueCodec:
         reverse_map = {v: k for k, v in SELECT_MAP[decode_type].items()}
 
         if option not in reverse_map:
-            raise ValueError(f"Invalid option '{option}' for decode_type '{decode_type}'")
+            raise ValueError(
+                f"Invalid option '{option}' for decode_type '{decode_type}'"
+            )
 
         # Get the string key and convert to int
         key_str = reverse_map[option]

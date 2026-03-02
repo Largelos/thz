@@ -99,7 +99,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             }
         )
-        return self.async_show_form(step_id="setup_ip", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="setup_ip", data_schema=schema, errors=errors
+        )
 
     @staticmethod
     def _is_valid_ip_or_hostname(host: str) -> bool:
@@ -174,7 +176,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     refresh_intervals[block] = value
                     keys_to_remove.append(key)
 
-            # Remove the refresh_* keys from user_input as they're now in refresh_intervals
+            # Remove refresh_* keys from user_input (now moved to refresh_intervals)
             for key in keys_to_remove:
                 user_input.pop(key)
 
@@ -262,7 +264,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def get_ports(
         self, current_device: str | None = None
     ) -> tuple[dict[str, str], str]:
-        """Get available serial ports as ({stored_path: display_label}, canonical_default).
+        """Get available serial ports.
+
+        Returns ({stored_path: display_label}, canonical_default).
 
         Args:
             current_device: Currently stored device path (e.g. from an existing config
@@ -274,7 +278,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             Tuple of (ports_dict, canonical_default) where ports_dict maps stable paths
             to human-readable labels, and canonical_default is the key to preselect.
         """
-        return await self.hass.async_add_executor_job(self._list_serial_ports, current_device)
+        return await self.hass.async_add_executor_job(
+            self._list_serial_ports, current_device
+        )
 
     @staticmethod
     def _list_serial_ports(
@@ -432,7 +438,8 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "refresh_intervals": refresh_intervals,
                 "write_interval": write_interval,
             }
-            title = f"THZ ({data['connection_type']}: {data.get('host') or data.get('device')})"
+            conn_target = data.get("host") or data.get("device")
+            title = f"THZ ({data['connection_type']}: {conn_target})"
             return self.async_create_entry(title=title, data=data)
 
         schema_dict = {}
@@ -442,7 +449,8 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         # Add write interval for number/switch/select/time entities
-        schema_dict[vol.Optional("write_interval", default=DEFAULT_UPDATE_INTERVAL)] = vol.All(
+        write_key = vol.Optional("write_interval", default=DEFAULT_UPDATE_INTERVAL)
+        schema_dict[write_key] = vol.All(
             int, vol.Range(min=5, max=86400)
         )
 
@@ -451,6 +459,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="refresh_blocks",
             data_schema=schema,
             description_placeholders={
-                "hint": "Update interval per block (seconds), write_interval for write entities (number/switch/select/time)"
+                "hint": (
+                    "Update interval per block (seconds), write_interval for"
+                    " write entities (number/switch/select/time)"
+                ),
             },
         )

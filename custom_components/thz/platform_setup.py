@@ -42,7 +42,8 @@ async def async_setup_write_platform(
         entity_type: The entity class to instantiate (e.g., THZNumber, THZSwitch).
         platform_type: The type filter for register entries (e.g., "number", "switch").
         entity_factory: Optional custom factory function for creating entities.
-                       If provided, called with (name, entry, device, device_id, write_interval)
+                       If provided, called with
+                       (name, entry, device, device_id, write_interval)
                        and should return a list of entities.
     """
     write_manager: RegisterMapManagerWrite = hass.data[DOMAIN]["write_manager"]
@@ -69,8 +70,12 @@ async def async_setup_write_platform(
 
             # Use custom factory if provided, otherwise use default
             if entity_factory:
-                new_entities = entity_factory(name, entry, device, device_id, write_interval)
-                entities.extend(new_entities if isinstance(new_entities, list) else [new_entities])
+                new_entities = entity_factory(
+                    name, entry, device, device_id, write_interval
+                )
+                entities.extend(
+                    new_entities if isinstance(new_entities, list) else [new_entities]
+                )
             else:
                 # Create entity instance with common parameters
                 entity = entity_type(

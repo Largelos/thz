@@ -470,12 +470,16 @@ class THZDevice:
             Escaped bytes ready to send
         """
         # 0x10 -> 0x10 0x10 (matches Perl line 1764)
-        data = data.replace(const.DATALINKESCAPE, const.DATALINKESCAPE + const.DATALINKESCAPE)
+        escape = const.DATALINKESCAPE
+        data = data.replace(escape, escape + escape)
         # 0x2B -> 0x2B 0x18 (matches Perl line 1768)
         return data.replace(b"\x2b", b"\x2b\x18")
 
     def decode_response(self, data: bytes):
-        """Decode the response from the THZ device, checking header, CRC, and unescaping."""
+        """Decode the response from the THZ device.
+
+        Checks header, CRC, and performs unescaping.
+        """
         try:
             if len(data) < 6:
                 _LOGGER.error("Response too short: %s", data.hex())
@@ -545,7 +549,8 @@ class THZDevice:
 
         checksum = self.thz_checksum(header + b"\x00" + addr_bytes + payload_to_deliver)
         # b'\x00' = Platzhalter für die Checksumme
-        # _LOGGER.debug(f"Berechnete Checksumme: {checksum.hex()} für Adresse {addr_bytes.hex()}
+        # _LOGGER.debug(
+        #     f"Berechnete Checksumme: {checksum.hex()} für Adresse {addr_bytes.hex()}
         # mit Payload {payload_to_deliver.hex()}")
         telegram = self.construct_telegram(
             addr_bytes + payload_to_deliver, header, footer, checksum
@@ -568,7 +573,8 @@ class THZDevice:
         r"""Constructs a telegram for the THZ device based on the given address bytes.
 
         Args:
-            addr_bytes: Address bytes including command and optional payload (e.g. b'\xfb' or b'\x0a\x01\x1f')
+            addr_bytes: Address bytes including command and optional payload
+                (e.g. b'\xfb' or b'\x0a\x01\x1f')
             header: Header bytes (e.g. b'\x01\x00' or b'\x01\x80')
             footer: Footer bytes (e.g. b'\x10\x03')
             checksum: Checksum bytes (e.g. b'\x5a')
@@ -593,7 +599,9 @@ class THZDevice:
         try:
             value_raw = self.read_value(b"\xfd", "get", 2, 2)
             if value_raw is None:
-                _LOGGER.error("Firmware-Version konnte nicht gelesen werden: Keine Antwort")
+                _LOGGER.error(
+                    "Firmware-Version konnte nicht gelesen werden: Keine Antwort"
+                )
                 return ""
             # _LOGGER.debug("Rohdaten Firmware-Version: %s", value_raw.hex())
             firmware_version = int.from_bytes(value_raw, byteorder="big", signed=False)
