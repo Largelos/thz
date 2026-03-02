@@ -13,7 +13,7 @@ All notable changes to the THZ integration are documented here.
 
 #### Passive Cooling Support (firmware 4.39 / 5.39)
 - New **select entity** `p75passiveCooling` for devices running firmware 4.39 or 5.39.
-- Supports modes: `off`, `supply_air`, `exhaust_air`, `bypass`, and `auto`.
+- Supports modes: `off`, `exhaust_air`, `supply_air`, `bypass`, and `sommerkassette`.
 - Fully translated in English and German.
 - Cooling energy sensor `sCoolHCTotal` (paired-block read) added for firmware 5.39.
 
