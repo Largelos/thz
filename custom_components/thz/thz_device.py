@@ -291,6 +291,9 @@ class THZDevice:
                     and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
                 ):
                     break
+            else:
+                # Avoid busy-waiting when no data is currently available
+                time.sleep(0.01)
 
         if not (
             len(data) >= 8
