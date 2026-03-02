@@ -27,7 +27,8 @@ async def async_get_config_entry_diagnostics(
     THZ integration without exposing sensitive data like IP addresses or
     serial numbers.
     """
-    entry_data = hass.data[DOMAIN].get(config_entry.entry_id, {})
+    domain_data = hass.data.get(DOMAIN, {})
+    entry_data = domain_data.get(config_entry.entry_id, {})
     device = entry_data.get("device")
     coordinators = entry_data.get("coordinators", {})
 
