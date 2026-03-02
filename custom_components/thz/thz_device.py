@@ -499,8 +499,6 @@ class THZDevice:
                 # For CRC calculation: everything except CRC and ETX (last 2 bytes)
                 # Assemble hex string for checking
                 check_data = data[:2] + b"\x00" + payload
-                # _LOGGER.debug("Payload: %s, Checksum: %02X, Check data: %s",
-                #               payload.hex(), crc, check_data.hex())
                 checksum_bytes = self.thz_checksum(check_data)
                 calc_crc = checksum_bytes[0]
                 if calc_crc != crc:
@@ -549,16 +547,10 @@ class THZDevice:
 
         checksum = self.thz_checksum(header + b"\x00" + addr_bytes + payload_to_deliver)
         # b'\x00' = Platzhalter für die Checksumme
-        # _LOGGER.debug(
-        #     f"Berechnete Checksumme: {checksum.hex()} für Adresse {addr_bytes.hex()}
-        # mit Payload {payload_to_deliver.hex()}")
         telegram = self.construct_telegram(
             addr_bytes + payload_to_deliver, header, footer, checksum
         )
-        # _LOGGER.debug(f"Konstruiertes Telegramm: {telegram.hex()}")
         raw_response = self.send_request(telegram, get_or_set)
-        # _LOGGER.debug(f"Rohantwort erhalten: {raw_response.hex()}")
-        # _LOGGER.debug("Payload dekodiert: %s", payload.hex())
         if get_or_set == "get":
             decoded = self.decode_response(raw_response)
             if decoded is None:
@@ -603,7 +595,6 @@ class THZDevice:
                     "Firmware-Version konnte nicht gelesen werden: Keine Antwort"
                 )
                 return ""
-            # _LOGGER.debug("Rohdaten Firmware-Version: %s", value_raw.hex())
             firmware_version = int.from_bytes(value_raw, byteorder="big", signed=False)
             _LOGGER.debug("Firmware-Version gelesen: %s", firmware_version)
             return str(firmware_version)
