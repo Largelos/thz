@@ -82,10 +82,10 @@ For devices running firmware 4.39 or 5.39, a **Passive Cooling** select entity i
 | Mode | Description |
 |------|-------------|
 | `off` | Passive cooling disabled |
-| `supply_air` | Cool via supply air only |
 | `exhaust_air` | Cool via exhaust air only |
+| `supply_air` | Cool via supply air only |
 | `bypass` | Bypass mode |
-| `auto` | Automatic selection |
+| `sommerkassette` | Summer cassette mode |
 
 A corresponding energy sensor `sCoolHCTotal` tracks total passive cooling energy on firmware 5.39.
 
