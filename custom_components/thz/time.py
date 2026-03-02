@@ -1,7 +1,6 @@
 """Time entity for THZ devices."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from datetime import time
 
@@ -254,8 +253,6 @@ class THZTime(THZBaseEntity, TimeEntity):
                 WRITE_REGISTER_OFFSET,
                 WRITE_REGISTER_LENGTH,
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         # Time values are stored as single bytes (0-95 quarters)
         if not value_bytes:
@@ -297,8 +294,6 @@ class THZTime(THZBaseEntity, TimeEntity):
             await self.hass.async_add_executor_job(
                 self._device.write_value, bytes.fromhex(self._command), num_bytes
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         self._attr_native_value = t_value
 
@@ -378,8 +373,6 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
             value_bytes = await self.hass.async_add_executor_job(
                 self._device.read_value, bytes.fromhex(self._command), "get", 4, 4
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         # Schedule data format (from FHEM 7prog):
         # - Bytes 0-3: header/other data
@@ -453,7 +446,5 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
                 bytes.fromhex(self._command),
                 bytes(schedule_bytes)
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         self._attr_native_value = t_value

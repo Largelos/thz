@@ -1,7 +1,6 @@
 """Select entity for THZ integration."""
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from homeassistant.components.select import SelectEntity
@@ -147,8 +146,6 @@ class THZSelect(THZBaseEntity, SelectEntity):
                     bytes.fromhex(self._command),
                     value_bytes,
                 )
-                # Short pause to ensure the device is ready
-                await asyncio.sleep(0.01)
 
             self._attr_current_option = option
         except (ValueError, TypeError) as err:

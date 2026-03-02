@@ -1,7 +1,6 @@
 """THZ Switch Entity Platform."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
@@ -89,8 +88,6 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
                 WRITE_REGISTER_OFFSET,
                 WRITE_REGISTER_LENGTH,
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         # Validate that we received data
         if not value_bytes:
