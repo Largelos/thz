@@ -1,5 +1,4 @@
 """Tests for THZ protocol functions."""
-import pytest
 
 from custom_components.thz.thz_device import THZDevice
 
