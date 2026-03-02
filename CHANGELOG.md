@@ -104,9 +104,10 @@ All notable changes to the THZ integration are documented here.
    add custom metadata must be updated to use the 6th-element dict in the
    register-map tuple instead.
 
-3. **Calendar platform requires `tzlocal` dependency (introduced automatically).**  
-   If you manage Home Assistant dependencies manually, ensure `tzlocal` is
-   available.
+3. **Calendar platform has been removed.**  
+   Any existing `calendar.thz_*` entities from previous versions will no
+   longer be available. Update or remove any automations, scripts, or
+   dashboards that reference these calendar entities.
 
 ### Bug Fixes
 
