@@ -416,7 +416,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             blocks = device.available_reading_blocks
             _LOGGER.info("Available blocks: %s", blocks)
 
-        except Exception:
+        except (OSError, RuntimeError):
             _LOGGER.exception("Error reading firmware/blocks")
             return self.async_abort(reason="cannot_detect_blocks")
 

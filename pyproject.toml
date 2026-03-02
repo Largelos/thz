@@ -8,6 +8,7 @@ select = [
     "W",     # pycodestyle warnings
     "D",     # pydocstyle
     "F",     # pyflakes
+    "BLE",   # blind exception (except Exception)
 ]
 ignore = [
     "D203",  # 1 blank line required before class docstring (conflicts with D211)

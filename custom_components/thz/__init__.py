@@ -298,7 +298,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "formatted": formatted,
             }
 
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             error_msg = f"Error reading register {command_str}: {err}"
             _LOGGER.error(error_msg, exc_info=True)
             await hass.services.async_call(
@@ -463,7 +463,7 @@ async def _async_update_block(
                 result = bytes(buf)
 
             return result
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001
         raise UpdateFailed(f"Error reading {block_name}: {err}") from err
 
 

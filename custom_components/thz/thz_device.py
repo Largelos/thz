@@ -195,7 +195,7 @@ class THZDevice:
             if self.ser is not None:
                 try:
                     self.ser.close()
-                except Exception:
+                except OSError:
                     pass
 
             if self.connection == "usb":
@@ -204,7 +204,7 @@ class THZDevice:
                 self._connect_tcp()
 
             _LOGGER.info("Reconnection successful")
-        except Exception as e:
+        except OSError as e:
             _LOGGER.error("Reconnection failed: %s", e)
             raise
 
@@ -321,7 +321,7 @@ class THZDevice:
                     try:
                         self._reconnect()
                         continue  # Retry after successful reconnection
-                    except Exception as reconnect_error:
+                    except OSError as reconnect_error:
                         _LOGGER.error("Reconnect failed: %s", reconnect_error)
                         # Fall through to raise the original connection error
                 # Re-raise the connection error after max retries
@@ -335,7 +335,7 @@ class THZDevice:
                 _LOGGER.error("Protocol error in send_request: %s", e)
                 raise
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 last_error = e
                 _LOGGER.error("Unexpected error in send_request: %s", e)
                 raise RuntimeError(f"Device communication failed: {e}") from e
@@ -527,7 +527,7 @@ class THZDevice:
                 return None
             _LOGGER.error("Unknown response: %s", data.hex())
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error("Error decoding response: %s", e)
             return None
 
@@ -607,8 +607,8 @@ class THZDevice:
             firmware_version = int.from_bytes(value_raw, byteorder="big", signed=False)
             _LOGGER.debug("Firmware-Version gelesen: %s", firmware_version)
             return str(firmware_version)
-        except Exception as e:
-            _LOGGER.error(f"Firmware-Version konnte nicht gelesen werden: {e}")
+        except (OSError, RuntimeError) as e:
+            _LOGGER.error("Firmware-Version konnte nicht gelesen werden: %s", e)
             return ""
 
     def read_value(
