@@ -42,12 +42,14 @@ async def async_setup_write_platform(
         entity_type: The entity class to instantiate (e.g., THZNumber, THZSwitch).
         platform_type: The type filter for register entries (e.g., "number", "switch").
         entity_factory: Optional custom factory function for creating entities.
-                       If provided, called with (name, entry, device, device_id, write_interval)
+                       If provided, called with
+                       (name, entry, device, device_id, write_interval)
                        and should return a list of entities.
     """
-    write_manager: RegisterMapManagerWrite = hass.data[DOMAIN]["write_manager"]
-    device: THZDevice = hass.data[DOMAIN]["device"]
-    device_id = hass.data[DOMAIN]["device_id"]
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    write_manager: RegisterMapManagerWrite = entry_data["write_manager"]
+    device: THZDevice = entry_data["device"]
+    device_id = entry_data["device_id"]
 
     # Get write interval from config, default to DEFAULT_UPDATE_INTERVAL
     write_interval = config_entry.data.get("write_interval", DEFAULT_UPDATE_INTERVAL)
@@ -69,8 +71,12 @@ async def async_setup_write_platform(
 
             # Use custom factory if provided, otherwise use default
             if entity_factory:
-                new_entities = entity_factory(name, entry, device, device_id, write_interval)
-                entities.extend(new_entities if isinstance(new_entities, list) else [new_entities])
+                new_entities = entity_factory(
+                    name, entry, device, device_id, write_interval
+                )
+                entities.extend(
+                    new_entities if isinstance(new_entities, list) else [new_entities]
+                )
             else:
                 # Create entity instance with common parameters
                 entity = entity_type(

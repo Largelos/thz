@@ -99,7 +99,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             }
         )
-        return self.async_show_form(step_id="setup_ip", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="setup_ip", data_schema=schema, errors=errors
+        )
 
     @staticmethod
     def _is_valid_ip_or_hostname(host: str) -> bool:
@@ -174,7 +176,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     refresh_intervals[block] = value
                     keys_to_remove.append(key)
 
-            # Remove the refresh_* keys from user_input as they're now in refresh_intervals
+            # Remove refresh_* keys from user_input (now moved to refresh_intervals)
             for key in keys_to_remove:
                 user_input.pop(key)
 
@@ -262,7 +264,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def get_ports(
         self, current_device: str | None = None
     ) -> tuple[dict[str, str], str]:
-        """Get available serial ports as ({stored_path: display_label}, canonical_default).
+        """Get available serial ports.
+
+        Returns ({stored_path: display_label}, canonical_default).
 
         Args:
             current_device: Currently stored device path (e.g. from an existing config
@@ -274,7 +278,118 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             Tuple of (ports_dict, canonical_default) where ports_dict maps stable paths
             to human-readable labels, and canonical_default is the key to preselect.
         """
-        return await self.hass.async_add_executor_job(self._list_serial_ports, current_device)
+        return await self.hass.async_add_executor_job(
+            self._list_serial_ports, current_device
+        )
+
+    @staticmethod
+    def _build_by_id_map() -> dict[str, str]:
+        """Build a single-pass realpath→by-id symlink lookup map.
+
+        Returns:
+            Dict mapping each symlink's resolved realpath to its full
+            /dev/serial/by-id path.
+        """
+        import os
+
+        by_id_map: dict[str, str] = {}
+        by_id_dir = "/dev/serial/by-id"
+        try:
+            if os.path.isdir(by_id_dir):
+                for name in os.listdir(by_id_dir):
+                    symlink = os.path.join(by_id_dir, name)
+                    try:
+                        by_id_map[os.path.realpath(symlink)] = symlink
+                    except OSError:
+                        pass
+        except OSError:
+            pass
+        return by_id_map
+
+    @staticmethod
+    def _build_result_dict(
+        ports_info: list[Any], by_id_map: dict[str, str]
+    ) -> dict[str, str]:
+        """Build display label and stored key for each detected serial port.
+
+        Args:
+            ports_info: List of port objects returned by serial.tools.list_ports.
+            by_id_map: Realpath→by-id path mapping from _build_by_id_map().
+
+        Returns:
+            Dict mapping stored key (by-id path or device path) to display label.
+        """
+        import os
+
+        result: dict[str, str] = {}
+        for p in ports_info:
+            try:
+                real_device = os.path.realpath(p.device)
+            except OSError:
+                real_device = p.device
+            by_id_path = by_id_map.get(real_device)
+
+            desc = p.description
+            if desc and desc != p.device:
+                label = f"{desc} ({p.device})"
+            else:
+                label = p.device
+
+            if by_id_path:
+                label = f"{label} [{os.path.basename(by_id_path)}]"
+                stored = by_id_path
+            else:
+                stored = p.device
+
+            result[stored] = label
+        return result
+
+    @staticmethod
+    def _resolve_canonical(
+        result: dict[str, str], current_device: str | None
+    ) -> tuple[dict[str, str], str]:
+        """Resolve current_device to its canonical key within result.
+
+        Upgrades a stored /dev/ttyUSBX path to its by-id equivalent when
+        possible.  If the device is disconnected, adds it to result so the
+        reconfigure form can still display it.
+
+        Args:
+            result: Port dict built by _build_result_dict(); mutated in-place
+                when the current device is disconnected.
+            current_device: Currently stored device path, or None.
+
+        Returns:
+            Tuple of (possibly-mutated result, canonical_key).
+        """
+        import os
+
+        if not current_device:
+            return result, next(iter(result))
+
+        if current_device in result:
+            return result, current_device
+
+        # Try realpath comparison to upgrade /dev/ttyUSBX → by-id key
+        canonical: str | None = None
+        try:
+            current_real = os.path.realpath(current_device)
+            for key in result:
+                try:
+                    if os.path.realpath(key) == current_real:
+                        canonical = key
+                        break
+                except OSError:
+                    continue
+        except OSError:
+            pass
+
+        if canonical is None:
+            # Device not currently connected; keep it selectable
+            result[current_device] = current_device
+            canonical = current_device
+
+        return result, canonical
 
     @staticmethod
     def _list_serial_ports(
@@ -294,8 +409,6 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         Returns:
             Tuple of (ports_dict, canonical_default).
         """
-        import os
-
         ports_info = serial.tools.list_ports.comports()
         if not ports_info:
             fallback = {
@@ -308,71 +421,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             canonical = current_device if current_device else "/dev/ttyUSB0"
             return fallback, canonical
 
-        # Build a single realpath→by-id lookup map in one pass
-        by_id_map: dict[str, str] = {}  # realpath → full by-id symlink path
-        by_id_dir = "/dev/serial/by-id"
-        try:
-            if os.path.isdir(by_id_dir):
-                for name in os.listdir(by_id_dir):
-                    symlink = os.path.join(by_id_dir, name)
-                    try:
-                        by_id_map[os.path.realpath(symlink)] = symlink
-                    except OSError:
-                        pass
-        except OSError:
-            pass
-
-        result: dict[str, str] = {}
-        for p in ports_info:
-            try:
-                real_device = os.path.realpath(p.device)
-            except OSError:
-                real_device = p.device
-            by_id_path = by_id_map.get(real_device)
-
-            # Build display label showing description and device path
-            desc = p.description
-            if desc and desc != p.device:
-                label = f"{desc} ({p.device})"
-            else:
-                label = p.device
-
-            if by_id_path:
-                label = f"{label} [{os.path.basename(by_id_path)}]"
-                stored = by_id_path
-            else:
-                stored = p.device
-
-            result[stored] = label
-
-        # Resolve current_device to its canonical key (backward compat)
-        canonical: str | None = None
-        if current_device:
-            if current_device in result:
-                canonical = current_device
-            else:
-                # Try realpath comparison to upgrade /dev/ttyUSBX → by-id key
-                try:
-                    current_real = os.path.realpath(current_device)
-                    for key in result:
-                        try:
-                            if os.path.realpath(key) == current_real:
-                                canonical = key  # Upgrade to by-id
-                                break
-                        except OSError:
-                            continue
-                except OSError:
-                    pass
-
-                if canonical is None:
-                    # Device not currently connected; keep it selectable
-                    result[current_device] = current_device
-                    canonical = current_device
-
-        if canonical is None:
-            canonical = next(iter(result))
-
-        return result, canonical
+        by_id_map = THZConfigFlow._build_by_id_map()
+        result = THZConfigFlow._build_result_dict(ports_info, by_id_map)
+        return THZConfigFlow._resolve_canonical(result, current_device)
 
     async def async_step_detect_blocks(
         self, user_input=None
@@ -410,7 +461,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             blocks = device.available_reading_blocks
             _LOGGER.info("Available blocks: %s", blocks)
 
-        except Exception:
+        except (OSError, RuntimeError):
             _LOGGER.exception("Error reading firmware/blocks")
             return self.async_abort(reason="cannot_detect_blocks")
 
@@ -432,7 +483,8 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "refresh_intervals": refresh_intervals,
                 "write_interval": write_interval,
             }
-            title = f"THZ ({data['connection_type']}: {data.get('host') or data.get('device')})"
+            conn_target = data.get("host") or data.get("device")
+            title = f"THZ ({data['connection_type']}: {conn_target})"
             return self.async_create_entry(title=title, data=data)
 
         schema_dict = {}
@@ -442,7 +494,8 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         # Add write interval for number/switch/select/time entities
-        schema_dict[vol.Optional("write_interval", default=DEFAULT_UPDATE_INTERVAL)] = vol.All(
+        write_key = vol.Optional("write_interval", default=DEFAULT_UPDATE_INTERVAL)
+        schema_dict[write_key] = vol.All(
             int, vol.Range(min=5, max=86400)
         )
 
@@ -451,6 +504,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="refresh_blocks",
             data_schema=schema,
             description_placeholders={
-                "hint": "Update interval per block (seconds), write_interval for write entities (number/switch/select/time)"
+                "hint": (
+                    "Update interval per block (seconds), write_interval for"
+                    " write entities (number/switch/select/time)"
+                ),
             },
         )

@@ -1,7 +1,6 @@
 """Time entity for THZ devices."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from datetime import time
 
@@ -44,7 +43,8 @@ def time_to_quarters(t: time | None, is_end_time: bool = False) -> int:
         - each hour adds 4 intervals,
         - minutes are floored to the nearest 15-minute boundary (minute // 15).
         - 96 represents 24:00 (end of day) when is_end_time=True and t == 00:00.
-        Valid normal values range from 0 to 95 (00:00 through 23:45). 128 is used as a special sentinel for unset/None.
+        Valid normal values range from 0 to 95 (00:00 through 23:45). 128 is used as
+        a special sentinel for unset/None.
 
     Examples:
     --------
@@ -87,7 +87,8 @@ def quarters_to_time(num: int) -> time | None:
     -----
     - The function validates the 0–95 range (plus 96 for end-of-day) and logs a
       warning for other out-of-range values.
-    - Invalid values outside 0-96 are clamped to the valid range (0-95) to prevent crashes.
+    - Invalid values outside 0-96 are clamped to the valid range (0-95) to prevent
+      crashes.
 
     Examples:
     --------
@@ -113,7 +114,8 @@ def quarters_to_time(num: int) -> time | None:
     # Validate range and clamp if necessary
     if num < 0 or num > 95:
         _LOGGER.warning(
-            "Invalid quarters value %s (expected 0-95 or 96 for end-of-day). Value will be clamped. "
+            "Invalid quarters value %s "
+            "(expected 0-95 or 96 for end-of-day). Value will be clamped. "
             "This may indicate a byte order issue in reading the time value.",
             num
         )
@@ -170,9 +172,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up THZ Time entities from a config entry."""
     # Use platform setup for both "time" and "schedule" types
-    write_manager: RegisterMapManagerWrite = hass.data[DOMAIN]["write_manager"]
-    device: THZDevice = hass.data[DOMAIN]["device"]
-    device_id = hass.data[DOMAIN]["device_id"]
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    write_manager: RegisterMapManagerWrite = entry_data["write_manager"]
+    device: THZDevice = entry_data["device"]
+    device_id = entry_data["device_id"]
 
     from .const import DEFAULT_UPDATE_INTERVAL
     write_interval = config_entry.data.get("write_interval", DEFAULT_UPDATE_INTERVAL)
@@ -187,8 +190,12 @@ async def async_setup_entry(
                 "Creating time entities for %s (type: %s) with command %s",
                 name, entry["type"], entry["command"]
             )
-            new_entities = _create_time_entities(name, entry, device, device_id, write_interval)
-            entities.extend(new_entities if isinstance(new_entities, list) else [new_entities])
+            new_entities = _create_time_entities(
+                name, entry, device, device_id, write_interval
+            )
+            entities.extend(
+                new_entities if isinstance(new_entities, list) else [new_entities]
+            )
 
     _LOGGER.info("Created %d time entities", len(entities))
     async_add_entities(entities, True)
@@ -247,8 +254,6 @@ class THZTime(THZBaseEntity, TimeEntity):
                 WRITE_REGISTER_OFFSET,
                 WRITE_REGISTER_LENGTH,
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         # Time values are stored as single bytes (0-95 quarters)
         if not value_bytes:
@@ -261,7 +266,12 @@ class THZTime(THZBaseEntity, TimeEntity):
 
         num = value_bytes[0]
         self._attr_native_value = quarters_to_time(num)
-        _LOGGER.debug("Updated time %s: %s quarters -> %s", self.name, num, self._attr_native_value)
+        _LOGGER.debug(
+            "Updated time %s: %s quarters -> %s",
+            self.name,
+            num,
+            self._attr_native_value,
+        )
 
     async def async_set_native_value(self, value: str):
         """Set new value for the time."""
@@ -276,7 +286,8 @@ class THZTime(THZBaseEntity, TimeEntity):
         _LOGGER.debug("Setting time %s to %s (%s quarters)", self.name, t_value, num)
 
         # Write as 2 bytes to match the protocol's read format (offset=4, length=2)
-        # even though only the first byte contains the meaningful time value (0-95 quarters).
+        # even though only the first byte contains the meaningful time value
+        # (0-95 quarters).
         # Second byte is set to 0 as it appears to be unused by the device.
         num_bytes = bytes([num, 0])
 
@@ -284,8 +295,6 @@ class THZTime(THZBaseEntity, TimeEntity):
             await self.hass.async_add_executor_job(
                 self._device.write_value, bytes.fromhex(self._command), num_bytes
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         self._attr_native_value = t_value
 
@@ -309,17 +318,20 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
 
         Args:
             name: The display name of the time entity (e.g., "programHC1_Mo_0 Start").
-            base_name: The base register name for translation lookup (e.g., "programHC1_Mo_0").
-                This is used to construct the translation key as base_translation_key + "_start" or "_end".
+            base_name: The base register name for translation lookup
+                (e.g., "programHC1_Mo_0").
+                This is used to construct the translation key as
+                base_translation_key + "_start" or "_end".
             entry: The register entry dict containing configuration.
             device: THZ device instance.
             device_id: The device identifier for linking to device.
             time_type: Either "start" or "end".
             scan_interval: The scan interval in seconds for polling updates.
-            
+
         Example:
             For base_name="programHC1_Mo_0" and time_type="start", the translation key
-            becomes "programhc1_mo_0_start" which resolves to "HC1 Program Monday 1 Start".
+            becomes "programhc1_mo_0_start" which resolves to
+            "HC1 Program Monday 1 Start".
         """
         # Get the base translation key and add _start or _end suffix
         base_translation_key = get_translation_key(base_name)
@@ -327,7 +339,7 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
             translation_key = f"{base_translation_key}_{time_type}"
         else:
             translation_key = None
-        
+
         # Initialize base class with common properties
         super().__init__(
             name=name,
@@ -362,8 +374,6 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
             value_bytes = await self.hass.async_add_executor_job(
                 self._device.read_value, bytes.fromhex(self._command), "get", 4, 4
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         # Schedule data format (from FHEM 7prog):
         # - Bytes 0-3: header/other data
@@ -403,7 +413,9 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
                     raise ValueError(f"Invalid time format: {value}")
                 hour, minute = int(parts[0]), int(parts[1])
                 if not (0 <= hour <= 23 and 0 <= minute <= 59):
-                    raise ValueError(f"Invalid time values: hour={hour}, minute={minute}")
+                    raise ValueError(
+                        f"Invalid time values: hour={hour}, minute={minute}"
+                    )
                 t_value = time(hour, minute)
             except (ValueError, AttributeError) as e:
                 _LOGGER.error("Failed to parse time value '%s': %s", value, e)
@@ -435,7 +447,5 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
                 bytes.fromhex(self._command),
                 bytes(schedule_bytes)
             )
-            # Short pause to ensure the device is ready
-            await asyncio.sleep(0.01)
 
         self._attr_native_value = t_value

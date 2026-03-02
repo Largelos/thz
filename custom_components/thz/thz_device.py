@@ -195,7 +195,7 @@ class THZDevice:
             if self.ser is not None:
                 try:
                     self.ser.close()
-                except Exception:
+                except OSError:
                     pass
 
             if self.connection == "usb":
@@ -204,9 +204,151 @@ class THZDevice:
                 self._connect_tcp()
 
             _LOGGER.info("Reconnection successful")
-        except Exception as e:
+        except OSError as e:
             _LOGGER.error("Reconnection failed: %s", e)
             raise
+
+    def _do_handshake_1(self, timeout: float) -> None:
+        """Perform handshake step 1: send 0x02 and expect 0x10.
+
+        Args:
+            timeout: Read timeout in seconds.
+
+        Raises:
+            RuntimeError: If the device response is not 0x10.
+        """
+        self._write_bytes(const.STARTOFTEXT)
+        response = self._read_exact(1, timeout)
+        if response != const.DATALINKESCAPE:
+            resp_hex = response.hex() if response else "no data"
+            error_msg = f"Handshake 1 failed, received: {resp_hex}"
+            _LOGGER.error(error_msg)
+            raise RuntimeError(error_msg)
+
+    def _do_handshake_2(self, timeout: float) -> None:
+        """Perform handshake step 2: read and validate 0x10 0x02.
+
+        Handles the firmware quirk where the device may send 0x10 and 0x02
+        separately (with a short delay for firmware 2.x).
+
+        Args:
+            timeout: Read timeout in seconds.
+
+        Raises:
+            RuntimeError: If the combined two-byte response is not 0x10 0x02.
+        """
+        response = self._read_exact(2, timeout)
+
+        if response == const.DATALINKESCAPE:
+            # Device sent only 0x10 so far; wait for the trailing 0x02
+            _LOGGER.debug("Received 0x10, waiting for 0x02...")
+            fw_ver = self._firmware_version
+            if fw_ver and fw_ver.startswith("2"):
+                # Add delay for firmware 2.x as per Perl module
+                # time.sleep() is used because this runs in executor (blocking)
+                time.sleep(0.005)
+            second_byte = self._read_exact(1, timeout)
+            if second_byte == const.STARTOFTEXT:
+                response = const.DATALINKESCAPE + const.STARTOFTEXT
+            else:
+                byte_hex = second_byte.hex() if second_byte else "no data"
+                error_msg = f"Handshake 2 failed: received 0x10 then {byte_hex}"
+                _LOGGER.error(error_msg)
+                raise RuntimeError(error_msg)
+        elif response == const.STARTOFTEXT:
+            # Sometimes device sends just 0x02 (as per Perl code line 1525)
+            _LOGGER.debug("Received only 0x02 as response")
+            response = const.DATALINKESCAPE + const.STARTOFTEXT
+
+        if response != const.DATALINKESCAPE + const.STARTOFTEXT:
+            resp_hex = response.hex() if response else "no data"
+            error_msg = f"Handshake 2 failed, received: {resp_hex}"
+            _LOGGER.error(error_msg)
+            raise RuntimeError(error_msg)
+
+    def _receive_data_telegram(self, timeout: float) -> bytes:
+        """Send confirmation and read data telegram until 0x10 0x03 terminator.
+
+        Args:
+            timeout: Read timeout in seconds.
+
+        Returns:
+            The raw data telegram bytes (including the 0x10 0x03 terminator).
+
+        Raises:
+            RuntimeError: If no valid data telegram is received within timeout.
+        """
+        self._write_bytes(const.DATALINKESCAPE)
+
+        data = bytearray()
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            chunk = self._read_available()
+            if chunk:
+                data.extend(chunk)
+                if (
+                    len(data) >= 8
+                    and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
+                ):
+                    break
+            else:
+                # Avoid busy-waiting when no data is currently available
+                time.sleep(0.01)
+
+        if not (
+            len(data) >= 8
+            and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
+        ):
+            error_msg = (
+                "No valid response received after data request - "
+                "timeout or incomplete data"
+            )
+            _LOGGER.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        return bytes(data)
+
+    def _exchange_once(
+        self, telegram: bytes, get_or_set: str, attempt: int, max_retries: int
+    ) -> bytes:
+        """Perform one complete protocol exchange attempt.
+
+        Checks connection health, runs both handshake steps, optionally reads
+        the data telegram, and sends the closing byte.
+
+        Args:
+            telegram: Encoded telegram bytes to send.
+            get_or_set: "get" to receive data; any other value for set-only.
+            attempt: Current attempt index (0-based), used for log messages.
+            max_retries: Total retries allowed, used for log messages.
+
+        Returns:
+            Response bytes (empty for set operations).
+
+        Raises:
+            ConnectionError: If the underlying connection is broken.
+            RuntimeError: If a protocol/handshake error occurs.
+        """
+        timeout = self.read_timeout
+
+        if self._initialized and not self._is_connection_alive():
+            _LOGGER.warning(
+                "Connection not alive, attempting reconnect (attempt %d/%d)",
+                attempt + 1, max_retries + 1,
+            )
+            self._reconnect()
+
+        self._do_handshake_1(timeout)
+
+        self._reset_input_buffer()
+        self._write_bytes(telegram)
+
+        self._do_handshake_2(timeout)
+
+        data = self._receive_data_telegram(timeout) if get_or_set == "get" else b""
+
+        self._write_bytes(const.STARTOFTEXT)
+        return data
 
     def send_request(self, telegram: bytes, get_or_set: str) -> bytes:
         """Send request via USB or TCP, receive response.
@@ -218,124 +360,35 @@ class THZDevice:
             RuntimeError: If device communication fails (handshake, timeout,
                 invalid response).
         """
-        timeout = self.read_timeout
-        data = bytearray()
         max_retries = 1  # Allow one retry on connection error
         last_error = None
 
         for attempt in range(max_retries + 1):
             try:
-                # Check connection health before sending (only if initialized)
-                if self._initialized and not self._is_connection_alive():
-                    _LOGGER.warning(
-                        "Connection not alive, attempting reconnect (attempt %d/%d)",
-                        attempt + 1, max_retries + 1
-                    )
-                    self._reconnect()
-
-                # 1. Send greeting (0x02)
-                self._write_bytes(const.STARTOFTEXT)
-
-                # 2. Expect 0x10 response
-                response = self._read_exact(1, timeout)
-                if response != const.DATALINKESCAPE:
-                    resp_hex = response.hex() if response else 'no data'
-                    error_msg = f"Handshake 1 failed, received: {resp_hex}"
-                    _LOGGER.error(error_msg)
-                    raise RuntimeError(error_msg)
-
-                # 3. Send telegram
-                self._reset_input_buffer()
-                self._write_bytes(telegram)
-
-                # 4. Expect 0x10 0x02 response
-                # Note: Device may send 0x10 and 0x02 separately with a delay
-                response = self._read_exact(2, timeout)
-
-                # Handle case where device sends 0x10 first, then 0x02 after delay
-                if response == const.DATALINKESCAPE:
-                    _LOGGER.debug("Received 0x10, waiting for 0x02...")
-                    # Add delay for firmware 2.x as per Perl module
-                    # time.sleep() is used because this runs in executor (blocking)
-                    fw_ver = self._firmware_version
-                    if fw_ver and fw_ver.startswith("2"):
-                        time.sleep(0.005)
-                    second_byte = self._read_exact(1, timeout)
-                    if second_byte == const.STARTOFTEXT:
-                        response = const.DATALINKESCAPE + const.STARTOFTEXT
-                    else:
-                        byte_hex = second_byte.hex() if second_byte else 'no data'
-                        error_msg = f"Handshake 2 failed: received 0x10 then {byte_hex}"
-                        _LOGGER.error(error_msg)
-                        raise RuntimeError(error_msg)
-                elif response == const.STARTOFTEXT:
-                    # Sometimes device sends just 0x02 (as per Perl code line 1525)
-                    _LOGGER.debug("Received only 0x02 as response")
-                    response = const.DATALINKESCAPE + const.STARTOFTEXT  # Accept it
-
-                if response != const.DATALINKESCAPE + const.STARTOFTEXT:
-                    resp_hex = response.hex() if response else 'no data'
-                    error_msg = f"Handshake 2 failed, received: {resp_hex}"
-                    _LOGGER.error(error_msg)
-                    raise RuntimeError(error_msg)
-
-                if get_or_set == "get":
-                    # 5. Send confirmation (0x10)
-                    self._write_bytes(const.DATALINKESCAPE)
-
-                    # 6. Receive data telegram until 0x10 0x03
-                    start_time = time.time()
-                    while time.time() - start_time < timeout:
-                        chunk = self._read_available()
-                        if chunk:
-                            data.extend(chunk)
-                            if (
-                                len(data) >= 8
-                                and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
-                            ):
-                                break
-
-                    if not (
-                        len(data) >= 8
-                        and data[-2:] == const.DATALINKESCAPE + const.ENDOFTEXT
-                    ):
-                        error_msg = (
-                            "No valid response received after data request - "
-                            "timeout or incomplete data"
-                        )
-                        _LOGGER.error(error_msg)
-                        raise RuntimeError(error_msg)
-
-                # 7. End of communication
-                self._write_bytes(const.STARTOFTEXT)
-                return bytes(data)
+                return self._exchange_once(telegram, get_or_set, attempt, max_retries)
 
             except ConnectionError as e:
                 last_error = e
                 _LOGGER.error(
                     "Connection error in send_request (attempt %d/%d): %s",
-                    attempt + 1, max_retries + 1, e
+                    attempt + 1, max_retries + 1, e,
                 )
                 if attempt < max_retries:
-                    # Try to reconnect for next attempt
                     try:
                         self._reconnect()
-                        continue  # Retry after successful reconnection
-                    except Exception as reconnect_error:
+                        continue
+                    except OSError as reconnect_error:
                         _LOGGER.error("Reconnect failed: %s", reconnect_error)
-                        # Fall through to raise the original connection error
-                # Re-raise the connection error after max retries
                 raise ConnectionError(
                     f"Connection failed after {max_retries + 1} attempts: {e}"
                 ) from e
 
             except RuntimeError as e:
-                # Protocol/handshake errors - don't retry these
                 last_error = e
                 _LOGGER.error("Protocol error in send_request: %s", e)
                 raise
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 last_error = e
                 _LOGGER.error("Unexpected error in send_request: %s", e)
                 raise RuntimeError(f"Device communication failed: {e}") from e
@@ -470,12 +523,16 @@ class THZDevice:
             Escaped bytes ready to send
         """
         # 0x10 -> 0x10 0x10 (matches Perl line 1764)
-        data = data.replace(const.DATALINKESCAPE, const.DATALINKESCAPE + const.DATALINKESCAPE)
+        escape = const.DATALINKESCAPE
+        data = data.replace(escape, escape + escape)
         # 0x2B -> 0x2B 0x18 (matches Perl line 1768)
         return data.replace(b"\x2b", b"\x2b\x18")
 
     def decode_response(self, data: bytes):
-        """Decode the response from the THZ device, checking header, CRC, and unescaping."""
+        """Decode the response from the THZ device.
+
+        Checks header, CRC, and performs unescaping.
+        """
         try:
             if len(data) < 6:
                 _LOGGER.error("Response too short: %s", data.hex())
@@ -495,8 +552,6 @@ class THZDevice:
                 # For CRC calculation: everything except CRC and ETX (last 2 bytes)
                 # Assemble hex string for checking
                 check_data = data[:2] + b"\x00" + payload
-                # _LOGGER.debug("Payload: %s, Checksum: %02X, Check data: %s",
-                #               payload.hex(), crc, check_data.hex())
                 checksum_bytes = self.thz_checksum(check_data)
                 calc_crc = checksum_bytes[0]
                 if calc_crc != crc:
@@ -523,7 +578,7 @@ class THZDevice:
                 return None
             _LOGGER.error("Unknown response: %s", data.hex())
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error("Error decoding response: %s", e)
             return None
 
@@ -545,15 +600,10 @@ class THZDevice:
 
         checksum = self.thz_checksum(header + b"\x00" + addr_bytes + payload_to_deliver)
         # b'\x00' = Platzhalter für die Checksumme
-        # _LOGGER.debug(f"Berechnete Checksumme: {checksum.hex()} für Adresse {addr_bytes.hex()}
-        # mit Payload {payload_to_deliver.hex()}")
         telegram = self.construct_telegram(
             addr_bytes + payload_to_deliver, header, footer, checksum
         )
-        # _LOGGER.debug(f"Konstruiertes Telegramm: {telegram.hex()}")
         raw_response = self.send_request(telegram, get_or_set)
-        # _LOGGER.debug(f"Rohantwort erhalten: {raw_response.hex()}")
-        # _LOGGER.debug("Payload dekodiert: %s", payload.hex())
         if get_or_set == "get":
             decoded = self.decode_response(raw_response)
             if decoded is None:
@@ -568,7 +618,8 @@ class THZDevice:
         r"""Constructs a telegram for the THZ device based on the given address bytes.
 
         Args:
-            addr_bytes: Address bytes including command and optional payload (e.g. b'\xfb' or b'\x0a\x01\x1f')
+            addr_bytes: Address bytes including command and optional payload
+                (e.g. b'\xfb' or b'\x0a\x01\x1f')
             header: Header bytes (e.g. b'\x01\x00' or b'\x01\x80')
             footer: Footer bytes (e.g. b'\x10\x03')
             checksum: Checksum bytes (e.g. b'\x5a')
@@ -593,14 +644,15 @@ class THZDevice:
         try:
             value_raw = self.read_value(b"\xfd", "get", 2, 2)
             if value_raw is None:
-                _LOGGER.error("Firmware-Version konnte nicht gelesen werden: Keine Antwort")
+                _LOGGER.error(
+                    "Firmware-Version konnte nicht gelesen werden: Keine Antwort"
+                )
                 return ""
-            # _LOGGER.debug("Rohdaten Firmware-Version: %s", value_raw.hex())
             firmware_version = int.from_bytes(value_raw, byteorder="big", signed=False)
             _LOGGER.debug("Firmware-Version gelesen: %s", firmware_version)
             return str(firmware_version)
-        except Exception as e:
-            _LOGGER.error(f"Firmware-Version konnte nicht gelesen werden: {e}")
+        except (OSError, RuntimeError) as e:
+            _LOGGER.error("Firmware-Version konnte nicht gelesen werden: %s", e)
             return ""
 
     def read_value(

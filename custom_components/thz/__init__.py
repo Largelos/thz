@@ -84,16 +84,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     device_entry = dev_reg.async_get_or_create(**kwargs)
     _LOGGER.debug("Device registry entry created/updated: %s", device_entry.id)
 
-    # 3. Load register mappings
-    hass.data[DOMAIN]["write_manager"] = device.write_register_map_manager
-    hass.data[DOMAIN]["register_manager"] = device.register_map_manager
-
-    # 4. Store device instance
-    hass.data[DOMAIN]["device"] = device
-    hass.data[DOMAIN]["device_id"] = unique_id
+    # 3. Load register mappings (local vars; stored per entry below)
+    write_manager = device.write_register_map_manager
+    register_manager = device.register_map_manager
 
     # 5. Collect paired register blocks for energy sensors (cmd2 + cmd3)
-    register_manager = hass.data[DOMAIN]["register_manager"]
     paired_blocks = register_manager.get_paired_blocks()
     if paired_blocks:
         _LOGGER.debug(
@@ -153,9 +148,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         )
         coordinators[block] = coordinator
 
-    # Store in hass.data
+    # Store in hass.data — all per-entry so multiple config entries don't collide
     hass.data.setdefault(DOMAIN, {})[config_entry.entry_id] = {
         "device": device,
+        "device_id": unique_id,
+        "write_manager": write_manager,
+        "register_manager": register_manager,
         "coordinators": coordinators,
     }
 
@@ -199,6 +197,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             ServiceResponse dict with command, length, hex, and formatted fields
         """
         command_str = call.data.get("command", "").strip().upper()
+        requested_entry_id: str | None = call.data.get("entry_id")
 
         # Validate hex string
         try:
@@ -223,8 +222,61 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "command": command_str,
             }
 
-        # Get the device from hass.data
-        device = hass.data[DOMAIN].get("device")
+        # Locate the target device.  With a single entry no entry_id is needed.
+        # With multiple entries, entry_id is required — return an error if omitted.
+        available_entries: dict[str, dict] = {
+            eid: ed
+            for eid, ed in hass.data.get(DOMAIN, {}).items()
+            if isinstance(ed, dict) and "device" in ed
+        }
+
+        device = None
+        if requested_entry_id:
+            entry_data_for_cmd = available_entries.get(requested_entry_id)
+            if entry_data_for_cmd is None:
+                error_msg = (
+                    f"No THZ entry found for entry_id '{requested_entry_id}'"
+                )
+                _LOGGER.error(error_msg)
+                await hass.services.async_call(
+                    "persistent_notification",
+                    "create",
+                    {
+                        "title": "THZ Raw Register Read Error",
+                        "message": error_msg,
+                        "notification_id": f"thz_raw_{command_str}",
+                    },
+                    blocking=True,
+                )
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "command": command_str,
+                }
+            device = entry_data_for_cmd["device"]
+        elif len(available_entries) > 1:
+            error_msg = (
+                "Multiple THZ config entries found. "
+                "Provide 'entry_id' to target a specific device."
+            )
+            _LOGGER.error(error_msg)
+            await hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": "THZ Raw Register Read Error",
+                    "message": error_msg,
+                    "notification_id": f"thz_raw_{command_str}",
+                },
+                blocking=True,
+            )
+            return {
+                "success": False,
+                "error": error_msg,
+                "command": command_str,
+            }
+        elif available_entries:
+            device = next(iter(available_entries.values()))["device"]
         if not device:
             error_msg = "THZ device not initialized"
             _LOGGER.error(error_msg)
@@ -298,7 +350,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "formatted": formatted,
             }
 
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             error_msg = f"Error reading register {command_str}: {err}"
             _LOGGER.error(error_msg, exc_info=True)
             await hass.services.async_call(
@@ -324,6 +376,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
         _async_handle_read_raw_register,
         schema=vol.Schema({
             vol.Required("command"): cv.string,
+            vol.Optional("entry_id"): cv.string,
         }),
         supports_response=SupportsResponse.OPTIONAL,
     )
@@ -463,7 +516,7 @@ async def _async_update_block(
                 result = bytes(buf)
 
             return result
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001
         raise UpdateFailed(f"Error reading {block_name}: {err}") from err
 
 
@@ -480,10 +533,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if device:
                 await hass.async_add_executor_job(device.close)
         hass.data[DOMAIN].pop(entry.entry_id, None)
-
-        # Clean up domain-level data that was stored outside entry scope
-        for key in ("device", "write_manager", "register_manager", "device_id"):
-            hass.data[DOMAIN].pop(key, None)
 
         # Remove services if this is the last config entry
         remaining_entries = [

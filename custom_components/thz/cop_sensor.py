@@ -1,10 +1,12 @@
 """COP (Coefficient of Performance) Sensor for THZ integration.
 
-This module provides calculated COP sensors for heat pumps based on energy and power values.
+This module provides calculated COP sensors for heat pumps based on energy and
+power values.
 COP is calculated as: COP = Heat Output / Electrical Input
 
 The following COP sensors are provided:
-- CurrentCOP: Instantaneous COP based on current power values (actualPower_Qc / actualPower_Pel)
+- CurrentCOP: Instantaneous COP based on current power values
+  (actualPower_Qc / actualPower_Pel)
 - DailyCOP: Daily COP based on daily energy values
 - LifetimeCOP: Overall COP based on total energy values
 
@@ -37,7 +39,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # Maps sensor names to (block_name, byte_offset, byte_length, decode_type, factor).
-# Offsets/lengths match the sensor.py conversion from readings_map_439.py nibble notation:
+# Offsets/lengths match the sensor.py conversion from readings_map_439.py nibble
+# notation:
 #   byte_offset = raw_offset // 2  (nibble 8 → byte 4)
 #   byte_length = (raw_length + 1) // 2  (nibble-length 8 → 4 bytes)
 # All energy blocks are PAIRED (cmd2 + cmd3 combined as high*1000 + low), so the
@@ -76,7 +79,7 @@ async def async_setup_cop_sensors(
     # Get data from hass.data
     entry_data = hass.data[DOMAIN][config_entry.entry_id]
     coordinators = entry_data["coordinators"]
-    device_id = hass.data[DOMAIN]["device_id"]
+    device_id = entry_data["device_id"]
     device = entry_data["device"]
     firmware_version = device.firmware_version
 
@@ -267,7 +270,11 @@ class THZCurrentCOPSensor(CoordinatorEntity, SensorEntity):
             min_length = pel_byte_offset + pel_byte_length  # = 55
 
             if len(payload) < min_length:
-                _LOGGER.debug("Payload too short for power sensors: %d bytes, need %d", len(payload), min_length)
+                _LOGGER.debug(
+                    "Payload too short for power sensors: %d bytes, need %d",
+                    len(payload),
+                    min_length,
+                )
                 return None
 
             qc_bytes = payload[qc_byte_offset : qc_byte_offset + qc_byte_length]

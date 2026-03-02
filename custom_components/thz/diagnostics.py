@@ -27,8 +27,9 @@ async def async_get_config_entry_diagnostics(
     THZ integration without exposing sensitive data like IP addresses or
     serial numbers.
     """
-    device = hass.data[DOMAIN]["device"]
-    entry_data = hass.data[DOMAIN].get(config_entry.entry_id, {})
+    domain_data = hass.data.get(DOMAIN, {})
+    entry_data = domain_data.get(config_entry.entry_id, {})
+    device = entry_data.get("device")
     coordinators = entry_data.get("coordinators", {})
 
     # Collect basic device information
@@ -58,8 +59,8 @@ async def async_get_config_entry_diagnostics(
         }
 
     # Collect register information (counts only, no data)
-    register_manager = hass.data[DOMAIN].get("register_manager")
-    write_manager = hass.data[DOMAIN].get("write_manager")
+    register_manager = entry_data.get("register_manager")
+    write_manager = entry_data.get("write_manager")
 
     register_counts = {}
     if register_manager:
