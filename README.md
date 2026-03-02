@@ -13,6 +13,8 @@ This is a custom Home Assistant integration for connecting Stiebel Eltron LWZ or
 
 The integration communicates with the heat pump using the serial protocol, supporting both direct USB connections and network-based serial connections (via ser2net). This allows flexible deployment options depending on your home automation setup.
 
+Parts of this software have been developed by the help of AI.
+
 **Origin**: This integration is based on the FHEM-Module developed by Immi, adapted for Home Assistant with modern async architecture and full UI configuration support.
 
 **V0.3 alpha** adds passive cooling control, full diagnostics support, COP sensors, energy sensors via paired-block reads, and many reliability improvements. See [CHANGELOG.md](CHANGELOG.md) for details.
@@ -59,19 +61,11 @@ For firmware versions that support energy monitoring (e.g., 4.39), the integrati
 - **Daily COP DHW**: Daily COP for domestic hot water
 - **Daily COP Heating**: Daily COP for heating circuit
 - **Daily COP Total**: Combined daily COP (DHW + Heating)
-- **Monthly COP DHW**: Monthly COP for domestic hot water
-- **Monthly COP Heating**: Monthly COP for heating circuit
-- **Monthly COP Total**: Combined monthly COP (DHW + Heating)
-- **Yearly COP DHW**: Yearly COP for domestic hot water
-- **Yearly COP Heating**: Yearly COP for heating circuit
-- **Yearly COP Total**: Combined yearly COP (DHW + Heating)
 - **Lifetime COP DHW**: Overall COP for DHW since installation
 - **Lifetime COP Heating**: Overall COP for heating since installation
 - **Lifetime COP Total**: Combined lifetime COP (DHW + Heating)
 
 **Note**: COP (Coefficient of Performance) is calculated as Heat Output ÷ Electrical Input. A COP of 3.0 means the heat pump produces 3 kW of heat for every 1 kW of electricity consumed. 
-
-Monthly and Yearly COP sensors automatically reset at the start of each month/year and track the performance for that period. They persist their state across Home Assistant restarts.
 
 COP sensors require energy sensors to be available on your device, typically present in firmware 4.39 and higher.
 
@@ -105,8 +99,6 @@ Use the `thz.read_raw_register` service to read any raw register block from the 
 
 ### Planned Features
 
-- 🔄 Make sure all sensor values are interpreted correctly across all firmware versions
-- 🔄 Improve settings for polling frequency from the device
 - 🔄 Create climate entities for smoother interaction with Home Assistant's climate card
 
 ## Compatibility
@@ -117,8 +109,8 @@ The register maps and write maps in this release target the following firmware f
 
 | Firmware | Notes |
 |----------|-------|
-| 2.06     | Full support (sensors + write entities) |
-| 2.14 / 2.14j | Full support (sensors + write entities) |
+| 2.06     | sensors are supported, writing of entities to be implemented |
+| 2.14 / 2.14j | sensors are supported, writing of entities to be implemented |
 | 4.39     | Full support including energy sensors, COP, and passive cooling |
 | 5.39     | Full support including passive cooling energy sensor (`sCoolHCTotal`) |
 | Other    | Falls back to 5.39-like configuration — may work partially |
@@ -232,6 +224,7 @@ This means you are free to use, modify, and distribute this software under the t
 ---
 
 **Credits**: Based on the FHEM-Module by Immi. Thanks to the FHEM and Home Assistant community for their support and contributions.
+
 
 
 
