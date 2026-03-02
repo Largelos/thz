@@ -1652,10 +1652,10 @@
         "name": "Passive Kühlung",
         "state": {
           "off": "Aus",
-          "supply_air": "Zulüften",
           "exhaust_air": "Ablüften",
+          "supply_air": "Zulüften",
           "bypass": "Bypass",
-          "auto": "Auto"
+          "sommerkassette": "Sommerkassette"
         }
       },
       "z_control_valve_dhw": {
