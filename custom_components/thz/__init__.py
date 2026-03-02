@@ -197,6 +197,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             ServiceResponse dict with command, length, hex, and formatted fields
         """
         command_str = call.data.get("command", "").strip().upper()
+        requested_entry_id: str | None = call.data.get("entry_id")
 
         # Validate hex string
         try:
@@ -221,21 +222,61 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "command": command_str,
             }
 
-        # Get the device from the first available entry in hass.data.
-        # With multiple config entries this picks an arbitrary device; users
-        # with more than one THZ device should use entry_id in future.
-        device = None
-        available_entries = [
-            ed for ed in hass.data.get(DOMAIN, {}).values()
+        # Locate the target device.  With a single entry no entry_id is needed.
+        # With multiple entries, entry_id is required — return an error if omitted.
+        available_entries: dict[str, dict] = {
+            eid: ed
+            for eid, ed in hass.data.get(DOMAIN, {}).items()
             if isinstance(ed, dict) and "device" in ed
-        ]
-        if len(available_entries) > 1:
-            _LOGGER.warning(
-                "Multiple THZ config entries found; read_raw_register will "
-                "target the first one. Use entry_id to target a specific device."
+        }
+
+        device = None
+        if requested_entry_id:
+            entry_data_for_cmd = available_entries.get(requested_entry_id)
+            if entry_data_for_cmd is None:
+                error_msg = (
+                    f"No THZ entry found for entry_id '{requested_entry_id}'"
+                )
+                _LOGGER.error(error_msg)
+                await hass.services.async_call(
+                    "persistent_notification",
+                    "create",
+                    {
+                        "title": "THZ Raw Register Read Error",
+                        "message": error_msg,
+                        "notification_id": f"thz_raw_{command_str}",
+                    },
+                    blocking=True,
+                )
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "command": command_str,
+                }
+            device = entry_data_for_cmd["device"]
+        elif len(available_entries) > 1:
+            error_msg = (
+                "Multiple THZ config entries found. "
+                "Provide 'entry_id' to target a specific device."
             )
-        if available_entries:
-            device = available_entries[0]["device"]
+            _LOGGER.error(error_msg)
+            await hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": "THZ Raw Register Read Error",
+                    "message": error_msg,
+                    "notification_id": f"thz_raw_{command_str}",
+                },
+                blocking=True,
+            )
+            return {
+                "success": False,
+                "error": error_msg,
+                "command": command_str,
+            }
+        elif available_entries:
+            device = next(iter(available_entries.values()))["device"]
         if not device:
             error_msg = "THZ device not initialized"
             _LOGGER.error(error_msg)
@@ -335,6 +376,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
         _async_handle_read_raw_register,
         schema=vol.Schema({
             vol.Required("command"): cv.string,
+            vol.Optional("entry_id"): cv.string,
         }),
         supports_response=SupportsResponse.OPTIONAL,
     )

@@ -132,6 +132,72 @@ class TestReadRawRegisterService:
         assert "not initialized" in result["error"]
 
     @pytest.mark.asyncio
+    async def test_read_raw_register_multiple_entries_no_entry_id(
+        self, mock_hass, mock_device
+    ):
+        """Test error when multiple entries exist and entry_id is not supplied."""
+        from custom_components.thz import _async_setup_services
+
+        # Two config entries present
+        mock_hass.data[DOMAIN]["entry_a"] = {"device": mock_device}
+        mock_hass.data[DOMAIN]["entry_b"] = {"device": mock_device}
+
+        await _async_setup_services(mock_hass)
+        handler = mock_hass.services.async_register.call_args[0][2]
+
+        call = MagicMock()
+        call.data = {"command": "FB"}
+
+        result = await handler(call)
+
+        assert result["success"] is False
+        err = result["error"].lower()
+        assert "entry_id" in err or "multiple" in err
+
+    @pytest.mark.asyncio
+    async def test_read_raw_register_multiple_entries_with_entry_id(
+        self, mock_hass, mock_device
+    ):
+        """Test success when multiple entries exist and correct entry_id is given."""
+        from custom_components.thz import _async_setup_services
+
+        test_data = bytes.fromhex("010a070503001234ff")
+        mock_hass.async_add_executor_job = AsyncMock(return_value=test_data)
+
+        mock_hass.data[DOMAIN]["entry_a"] = {"device": mock_device}
+        mock_hass.data[DOMAIN]["entry_b"] = {"device": mock_device}
+
+        await _async_setup_services(mock_hass)
+        handler = mock_hass.services.async_register.call_args[0][2]
+
+        call = MagicMock()
+        call.data = {"command": "FB", "entry_id": "entry_a"}
+
+        result = await handler(call)
+
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_read_raw_register_multiple_entries_unknown_entry_id(
+        self, mock_hass, mock_device
+    ):
+        """Test error when entry_id does not match any loaded entry."""
+        from custom_components.thz import _async_setup_services
+
+        mock_hass.data[DOMAIN]["entry_a"] = {"device": mock_device}
+
+        await _async_setup_services(mock_hass)
+        handler = mock_hass.services.async_register.call_args[0][2]
+
+        call = MagicMock()
+        call.data = {"command": "FB", "entry_id": "nonexistent"}
+
+        result = await handler(call)
+
+        assert result["success"] is False
+        assert "nonexistent" in result["error"]
+
+    @pytest.mark.asyncio
     async def test_read_raw_register_device_error(self, mock_hass, mock_device):
         """Test read when device raises an error."""
         from custom_components.thz import _async_setup_services
