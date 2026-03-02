@@ -63,10 +63,8 @@ class TestReadRawRegisterService:
         """Test successful read of raw register."""
         from custom_components.thz import _async_setup_services
 
-        # Setup device in hass.data
-        mock_hass.data[DOMAIN]["device"] = mock_device
-
-        # Mock read_block to return test data
+        # Setup device in hass.data (per-entry)
+        mock_hass.data[DOMAIN]["test_entry"] = {"device": mock_device}
         test_data = bytes.fromhex("010a070503001234ff")
         mock_device.read_block = MagicMock(return_value=test_data)
         mock_hass.async_add_executor_job = AsyncMock(return_value=test_data)
@@ -101,7 +99,7 @@ class TestReadRawRegisterService:
         """Test read with invalid hex command."""
         from custom_components.thz import _async_setup_services
 
-        mock_hass.data[DOMAIN]["device"] = mock_device
+        mock_hass.data[DOMAIN]["test_entry"] = {"device": mock_device}
 
         await _async_setup_services(mock_hass)
         handler = mock_hass.services.async_register.call_args[0][2]
@@ -138,7 +136,7 @@ class TestReadRawRegisterService:
         """Test read when device raises an error."""
         from custom_components.thz import _async_setup_services
 
-        mock_hass.data[DOMAIN]["device"] = mock_device
+        mock_hass.data[DOMAIN]["test_entry"] = {"device": mock_device}
 
         # Mock read_block to raise an error
         mock_hass.async_add_executor_job = AsyncMock(
@@ -162,7 +160,7 @@ class TestReadRawRegisterService:
         """Test that formatted hex output is correct."""
         from custom_components.thz import _async_setup_services
 
-        mock_hass.data[DOMAIN]["device"] = mock_device
+        mock_hass.data[DOMAIN]["test_entry"] = {"device": mock_device}
 
         # Create test data with more than 16 bytes to test multi-line formatting
         test_data = bytes(range(32))

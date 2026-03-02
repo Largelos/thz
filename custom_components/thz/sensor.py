@@ -58,10 +58,10 @@ async def async_setup_entry(
         None
     """
     # Get data from hass.data
-    register_manager: RegisterMapManager = hass.data[DOMAIN]["register_manager"]
     entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    register_manager: RegisterMapManager = entry_data["register_manager"]
     coordinators = entry_data["coordinators"]
-    device_id = hass.data[DOMAIN]["device_id"]
+    device_id = entry_data["device_id"]
 
     # Create sensors
     sensors = []

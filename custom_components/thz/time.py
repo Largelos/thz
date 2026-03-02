@@ -172,9 +172,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up THZ Time entities from a config entry."""
     # Use platform setup for both "time" and "schedule" types
-    write_manager: RegisterMapManagerWrite = hass.data[DOMAIN]["write_manager"]
-    device: THZDevice = hass.data[DOMAIN]["device"]
-    device_id = hass.data[DOMAIN]["device_id"]
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    write_manager: RegisterMapManagerWrite = entry_data["write_manager"]
+    device: THZDevice = entry_data["device"]
+    device_id = entry_data["device_id"]
 
     from .const import DEFAULT_UPDATE_INTERVAL
     write_interval = config_entry.data.get("write_interval", DEFAULT_UPDATE_INTERVAL)

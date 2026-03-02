@@ -46,9 +46,10 @@ async def async_setup_write_platform(
                        (name, entry, device, device_id, write_interval)
                        and should return a list of entities.
     """
-    write_manager: RegisterMapManagerWrite = hass.data[DOMAIN]["write_manager"]
-    device: THZDevice = hass.data[DOMAIN]["device"]
-    device_id = hass.data[DOMAIN]["device_id"]
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    write_manager: RegisterMapManagerWrite = entry_data["write_manager"]
+    device: THZDevice = entry_data["device"]
+    device_id = entry_data["device_id"]
 
     # Get write interval from config, default to DEFAULT_UPDATE_INTERVAL
     write_interval = config_entry.data.get("write_interval", DEFAULT_UPDATE_INTERVAL)
