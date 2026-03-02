@@ -48,8 +48,6 @@ class THZDevice:
         self._firmware_version: str | None = None
         self.register_map_manager: RegisterMapManager | None = None
         self.write_register_map_manager: RegisterMapManagerWrite | None = None
-        self._cache = {}
-        self._cache_duration = 60
 
         # Thread lock for parallel access
         self.lock = asyncio.Lock()
@@ -83,9 +81,6 @@ class THZDevice:
         self.write_register_map_manager = RegisterMapManagerWrite(
             self._firmware_version
         )
-
-        self._cache = {}  # { block_name: (timestamp, payload) }
-        self._cache_duration = 60  # seconds
 
         self._initialized = True
 
@@ -212,28 +207,6 @@ class THZDevice:
         except Exception as e:
             _LOGGER.error("Reconnection failed: %s", e)
             raise
-
-    def read_block_cached(self, block: bytes, cache_duration: float = 60) -> bytes:
-        """Read a block of data with caching support.
-
-        Args:
-            block (bytes): The block identifier to read.
-            cache_duration (float): The duration in seconds to cache the data.
-            Defaults to 60 seconds.
-
-        Returns:
-            bytes: The block data. Returns cached data if available and not expired,
-            otherwise fetches fresh data.
-        """
-        now = time.time()
-        if block in self._cache:
-            ts, data = self._cache[block]
-            if now - ts < cache_duration:
-                return data
-
-        data = self.read_block(block, "get")
-        self._cache[block] = (now, data)
-        return data
 
     def send_request(self, telegram: bytes, get_or_set: str) -> bytes:
         """Send request via USB or TCP, receive response.

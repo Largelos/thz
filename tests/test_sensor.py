@@ -152,14 +152,6 @@ class TestSensorMetadataIntegration:
         meta = outside_temp[5]
         assert meta.get("translation_key") == "outside_temp"
 
-    def test_sensor_meta_fallback_for_missing(self):
-        """Test that missing sensor metadata returns empty dict."""
-        from custom_components.thz.sensor_meta import SENSOR_META
-
-        meta = SENSOR_META.get("nonExistentSensor", {})
-        assert meta == {}
-        assert meta.get("unit") is None
-
 
 class TestOffsetLengthCalculation:
     """Tests for offset and length calculation logic."""

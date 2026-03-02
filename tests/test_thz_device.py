@@ -62,13 +62,6 @@ class TestTHZDeviceInitialization:
         
         assert device.read_timeout == 2.5
 
-    def test_cache_initialization(self):
-        """Test that cache is initialized empty."""
-        device = THZDevice(connection="usb", port="/dev/ttyUSB0")
-        
-        assert device._cache == {}
-        assert device._cache_duration == 60
-
     def test_firmware_version_unset(self):
         """Test that firmware version is None before initialization."""
         device = THZDevice(connection="usb", port="/dev/ttyUSB0")
@@ -95,54 +88,6 @@ class TestTHZDeviceInitialization:
         device = THZDevice(connection="usb", port="/dev/ttyUSB0")
         
         assert device._min_interval == 0.1
-
-
-class TestTHZDeviceCaching:
-    """Tests for cache functionality."""
-
-    def test_cache_stores_data(self):
-        """Test that data can be stored in cache."""
-        import time
-        
-        device = THZDevice(connection="usb", port="/dev/ttyUSB0")
-        block = b'\x01\x00'
-        data = b'\xaa\xbb\xcc'
-        
-        device._cache[block] = (time.time(), data)
-        
-        assert block in device._cache
-        assert device._cache[block][1] == data
-
-    def test_read_block_cached_returns_cached(self):
-        """Test that cached data is returned within duration."""
-        import time
-        
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x00'
-        data = b'\xaa\xbb\xcc'
-        
-        # Store fresh data in cache
-        device._cache[block] = (time.time(), data)
-        
-        # Should return cached data
-        result = device.read_block_cached(block, cache_duration=60)
-        assert result == data
-
-    def test_read_block_cached_expires(self):
-        """Test that expired cache data is not returned."""
-        import time
-        
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x00'
-        data = b'\xaa\xbb\xcc'
-        
-        # Store old data in cache (100 seconds ago)
-        device._cache[block] = (time.time() - 100, data)
-        
-        # Should not return expired data (with 60 second duration)
-        # Without actual connection, should raise an exception
-        with pytest.raises((ConnectionError, RuntimeError)):
-            device.read_block_cached(block, cache_duration=60)
 
 
 class TestTHZDeviceProtocol:

@@ -41,14 +41,6 @@ class MockTimeEntity(MockEntity):
     """Mock time entity."""
     pass
 
-class MockScheduleEntity(MockEntity):
-    """Mock schedule entity."""
-    pass
-
-class MockCalendarEntity(MockEntity):
-    """Mock calendar entity."""
-    pass
-
 # Mock Home Assistant modules
 sys.modules['homeassistant'] = MagicMock()
 sys.modules['homeassistant.config_entries'] = MagicMock()
@@ -109,16 +101,6 @@ sys.modules['homeassistant.components.select'] = select_mock
 time_mock = MagicMock()
 time_mock.TimeEntity = MockTimeEntity
 sys.modules['homeassistant.components.time'] = time_mock
-
-# Mock schedule component
-schedule_mock = MagicMock()
-schedule_mock.Schedule = MockScheduleEntity
-sys.modules['homeassistant.components.schedule'] = schedule_mock
-
-# Mock calendar component
-calendar_mock = MagicMock()
-calendar_mock.CalendarEntity = MockCalendarEntity
-sys.modules['homeassistant.components.calendar'] = calendar_mock
 
 sys.modules['homeassistant.const'] = MagicMock()
 sys.modules['serial'] = MagicMock()

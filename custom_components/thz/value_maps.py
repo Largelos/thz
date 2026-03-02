@@ -80,9 +80,9 @@ SELECT_MAP = {
     },
     "passive_cooling": {
         "0": "off",
-        "1": "supply_air",
-        "2": "exhaust_air",
+        "1": "exhaust_air",
+        "2": "supply_air",
         "3": "bypass",
-        "4": "auto",
+        "4": "sommerkassette",
     },
 }

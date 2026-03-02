@@ -1,4 +1,4 @@
-"""Basic tests for number, select, switch, calendar, and time modules."""
+"""Basic tests for number, select, switch, and time modules."""
 
 import pytest
 
@@ -59,24 +59,6 @@ class TestSwitchModule:
         from custom_components.thz.switch import THZSwitch
         assert THZSwitch is not None
 
-
-class TestCalendarModule:
-    """Test calendar module can be imported and has expected structure."""
-
-    def test_import_calendar_module(self):
-        """Test that calendar module can be imported."""
-        from custom_components.thz import calendar
-        assert calendar is not None
-
-    def test_calendar_has_async_setup_entry(self):
-        """Test that calendar module has async_setup_entry function."""
-        from custom_components.thz.calendar import async_setup_entry
-        assert callable(async_setup_entry)
-
-    def test_calendar_has_entity_class(self):
-        """Test that calendar module has THZCalendar class."""
-        from custom_components.thz.calendar import THZCalendar
-        assert THZCalendar is not None
 
 
 class TestTimeModule:

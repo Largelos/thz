@@ -1,5 +1,4 @@
 """Tests for THZ protocol functions."""
-import pytest
 
 from custom_components.thz.thz_device import THZDevice
 
@@ -155,36 +154,3 @@ class TestTelegramConstruction:
         # After escaping: b'\x30\x2b\x18'
         assert telegram == b'\x01\x00\x30\x2b\x18\x10\x03'
 
-
-class TestCaching:
-    """Tests for read_block_cached function."""
-
-    def test_cache_returns_cached_data(self):
-        """Test that cached data is returned without reading."""
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x02'
-        cached_data = b'\xaa\xbb\xcc'
-        
-        # Manually populate cache
-        import time
-        device._cache[block] = (time.time(), cached_data)
-        
-        # Should return cached data
-        result = device.read_block_cached(block, cache_duration=60)
-        assert result == cached_data
-
-    def test_cache_expires(self):
-        """Test that cache expires after duration."""
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x02'
-        cached_data = b'\xaa\xbb\xcc'
-        
-        # Populate cache with old timestamp
-        import time
-        device._cache[block] = (time.time() - 100, cached_data)
-        
-        # Cache should be expired with duration of 60 seconds
-        # This will try to read from device, which should raise an exception without a connection
-        import pytest
-        with pytest.raises((ConnectionError, RuntimeError)):
-            device.read_block_cached(block, cache_duration=60)

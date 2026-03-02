@@ -33,7 +33,6 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, should_hide_entity_by_default
 from .cop_sensor import async_setup_cop_sensors
 from .register_maps.register_map_manager import RegisterMapManager
-from .sensor_meta import SENSOR_META
 from .value_codec import decode_raw_value
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,8 +97,7 @@ async def async_setup_entry(
 
             seen_sensor_names.add(sensor_name)
 
-            # Tuple metadata takes precedence over legacy SENSOR_META lookup
-            meta = {**SENSOR_META.get(sensor_name, {}), **tuple_meta}
+            meta = {**tuple_meta}
 
             # FHEM nibble-offset convention: each register offset is a nibble (4-bit)
             # position in the raw hex string.  Two consecutive nibble offsets share the

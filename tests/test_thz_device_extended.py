@@ -1,7 +1,6 @@
 """Additional comprehensive protocol and device tests."""
 
 import pytest
-import time
 
 from custom_components.thz.thz_device import THZDevice
 
@@ -157,84 +156,6 @@ class TestTHZDeviceProtocolExtended:
         # checksum + addr = b'\x10\x10\x2b'
         # After escape: b'\x10\x10\x10\x10\x2b\x18'
         assert telegram == b'\x01\x00\x10\x10\x10\x10\x2b\x18\x10\x03'
-
-
-class TestTHZDeviceCacheAdvanced:
-    """Advanced cache functionality tests."""
-
-    def test_cache_different_blocks(self):
-        """Test caching multiple different blocks."""
-        device = THZDevice(connection="usb", port="/dev/null")
-        
-        block1 = b'\x01\x00'
-        block2 = b'\x02\x00'
-        data1 = b'\xaa\xbb'
-        data2 = b'\xcc\xdd'
-        
-        # Store in cache
-        device._cache[block1] = (time.time(), data1)
-        device._cache[block2] = (time.time(), data2)
-        
-        # Verify both cached
-        result1 = device.read_block_cached(block1, cache_duration=60)
-        result2 = device.read_block_cached(block2, cache_duration=60)
-        
-        assert result1 == data1
-        assert result2 == data2
-
-    def test_cache_expiration_boundary(self):
-        """Test cache expiration at exact boundary."""
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x00'
-        data = b'\xaa\xbb'
-        
-        # Store with timestamp exactly at duration boundary
-        now = time.time()
-        device._cache[block] = (now - 60, data)
-        
-        # With duration of 60, should be expired
-        result = device.read_block_cached(block, cache_duration=60)
-        assert result == b""  # Expired, returns empty
-
-    def test_cache_just_within_duration(self):
-        """Test cache just within valid duration."""
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x00'
-        data = b'\xaa\xbb'
-        
-        # Store with timestamp just within duration
-        now = time.time()
-        device._cache[block] = (now - 59, data)
-        
-        # With duration of 60, should still be valid
-        result = device.read_block_cached(block, cache_duration=60)
-        assert result == data
-
-    def test_cache_zero_duration(self):
-        """Test cache with zero duration (always expired)."""
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x00'
-        data = b'\xaa\xbb'
-        
-        # Store fresh data
-        device._cache[block] = (time.time(), data)
-        
-        # With zero duration, should be expired
-        result = device.read_block_cached(block, cache_duration=0)
-        assert result == b""
-
-    def test_cache_very_long_duration(self):
-        """Test cache with very long duration."""
-        device = THZDevice(connection="usb", port="/dev/null")
-        block = b'\x01\x00'
-        data = b'\xaa\xbb'
-        
-        # Store old data
-        device._cache[block] = (time.time() - 1000, data)
-        
-        # With very long duration, should still be valid
-        result = device.read_block_cached(block, cache_duration=10000)
-        assert result == data
 
 
 class TestTHZDeviceConfiguration:
