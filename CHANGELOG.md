@@ -17,13 +17,6 @@ All notable changes to the THZ integration are documented here.
 - Fully translated in English and German.
 - Cooling energy sensor `sCoolHCTotal` (paired-block read) added for firmware 5.39.
 
-#### Calendar Platform
-- New **calendar entities** visualise heating, DHW, and ventilation program schedules
-  directly inside Home Assistant's calendar view.
-- Each program slot (start/end time + days) is shown as a recurring weekly event.
-- Calendar entities are created automatically for all programme-type write registers
-  (HC1, HC2, DHW, ventilation).
-
 #### Diagnostics Support
 - The integration now exposes a **Download Diagnostics** option in the Home Assistant UI.
 - The diagnostics file includes firmware version, connection type, coordinator status,

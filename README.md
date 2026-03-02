@@ -15,7 +15,7 @@ The integration communicates with the heat pump using the serial protocol, suppo
 
 **Origin**: This integration is based on the FHEM-Module developed by Immi, adapted for Home Assistant with modern async architecture and full UI configuration support.
 
-**V0.3 alpha** adds passive cooling control, a calendar platform for schedule visualisation, full diagnostics support, COP sensors, energy sensors via paired-block reads, and many reliability improvements. See [CHANGELOG.md](CHANGELOG.md) for details.
+**V0.3 alpha** adds passive cooling control, full diagnostics support, COP sensors, energy sensors via paired-block reads, and many reliability improvements. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Features
 
@@ -28,7 +28,6 @@ The integration communicates with the heat pump using the serial protocol, suppo
 - ✅ **Number Platform**: Adjust numeric settings and parameters
 - ✅ **Select Platform**: Choose between predefined options for various settings — including **passive cooling mode** (firmware 4.39/5.39)
 - ✅ **Time Platform**: Set time-based parameters, schedules and programs
-- ✅ **Calendar Platform**: Visualise heating, DHW, and ventilation program schedules as recurring calendar events
 - ✅ **Diagnostics**: Download a diagnostics report for troubleshooting (via Settings → Devices & Services)
 - ✅ **Device Registry Integration**: Proper device identification in Home Assistant
 - ✅ **Per-Block Polling Intervals**: Each register block has its own configurable poll interval
@@ -89,10 +88,6 @@ For devices running firmware 4.39 or 5.39, a **Passive Cooling** select entity i
 | `auto` | Automatic selection |
 
 A corresponding energy sensor `sCoolHCTotal` tracks total passive cooling energy on firmware 5.39.
-
-### Calendar Schedules
-
-Heating, DHW, and ventilation programme schedules are visible in Home Assistant's **Calendar** view as recurring weekly events. Each slot shows the start/end time and active days of the week.
 
 ### Diagnostics
 
