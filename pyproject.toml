@@ -18,7 +18,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"custom_components/thz/register_maps/*.py" = ["D100", "D104"]
+"custom_components/thz/register_maps/*.py" = ["D100", "D104", "E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
