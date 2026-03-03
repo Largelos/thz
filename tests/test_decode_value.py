@@ -181,3 +181,167 @@ class TestEdgeCases:
         raw = b'\x01\xff'
         assert decode_value(raw, "bit0") == True
         assert decode_value(raw, "bit1") == False
+
+
+class TestDecodeFaultmap:
+    """Tests for faultmap decoding (fault code integer → fault name string)."""
+
+    def test_known_fault_code_1(self):
+        """Test fault code 1 → F01_AnodeFault."""
+        # 0x0001 = 1
+        raw = b'\x00\x01'
+        assert decode_value(raw, "faultmap") == "F01_AnodeFault"
+
+    def test_known_fault_code_2(self):
+        """Test fault code 2 → F02_SafetyTempDelimiterEngaged."""
+        raw = b'\x00\x02'
+        assert decode_value(raw, "faultmap") == "F02_SafetyTempDelimiterEngaged"
+
+    def test_known_fault_code_0(self):
+        """Test fault code 0 → n.a. (no fault)."""
+        raw = b'\x00\x00'
+        assert decode_value(raw, "faultmap") == "n.a."
+
+    def test_known_fault_code_36(self):
+        """Test fault code 36 → F36_MinFlowRate."""
+        raw = b'\x00\x24'  # 0x24 = 36
+        assert decode_value(raw, "faultmap") == "F36_MinFlowRate"
+
+    def test_known_fault_code_52(self):
+        """Test fault code 52 → F52_SensorCondenserOutlet (highest known code)."""
+        raw = b'\x00\x34'  # 0x34 = 52
+        assert decode_value(raw, "faultmap") == "F52_SensorCondenserOutlet"
+
+    def test_unknown_fault_code_returns_numeric_string(self):
+        """Test that an unmapped code returns its numeric value as string."""
+        raw = b'\x00\x63'  # 99 decimal, not in faultmap
+        assert decode_value(raw, "faultmap") == "99"
+
+    def test_single_byte_fault_code(self):
+        """Test faultmap with a single byte input.
+
+        The decoder accepts any byte length (big-endian); single-byte input
+        simulates the FHEM 'D1last' format for non-206 firmware (length 2 nibbles
+        = 1 byte), whereas firmware 206 uses 4 nibbles = 2 bytes.
+        """
+        # For newer firmware faultCODE uses 1 byte (length 2 nibbles)
+        raw = b'\x03'  # 3 → F03_HighPreasureGuardFault
+        assert decode_value(raw, "faultmap") == "F03_HighPreasureGuardFault"
+
+
+class TestDecodeHex2Time:
+    """Tests for hex2time decoding (decimal-encoded time → HH:MM string).
+
+    The device stores time as a big-endian integer where:
+        value = hours * 100 + minutes
+    Matching FHEM firmware 206: sprintf("%02u:%02u", hex($value)/100, hex($value)%100)
+    """
+
+    def test_midnight(self):
+        """Test 00:00 (midnight)."""
+        raw = b'\x00\x00'  # 0 → 00:00
+        assert decode_value(raw, "hex2time") == "00:00"
+
+    def test_noon(self):
+        """Test 12:00 (noon)."""
+        # 12:00 = 1200 = 0x04B0
+        raw = b'\x04\xb0'
+        assert decode_value(raw, "hex2time") == "12:00"
+
+    def test_half_past_twelve(self):
+        """Test 12:30."""
+        # 12:30 = 1230 = 0x04CE
+        raw = b'\x04\xce'
+        assert decode_value(raw, "hex2time") == "12:30"
+
+    def test_end_of_day(self):
+        """Test 23:45 (latest standard schedule time)."""
+        # 23:45 = 2345 = 0x0929
+        raw = b'\x09\x29'
+        assert decode_value(raw, "hex2time") == "23:45"
+
+    def test_one_minute_past_midnight(self):
+        """Test 00:01."""
+        # 00:01 = 1 = 0x0001
+        raw = b'\x00\x01'
+        assert decode_value(raw, "hex2time") == "00:01"
+
+    def test_single_digit_hour(self):
+        """Test 06:30 — hour must be zero-padded."""
+        # 06:30 = 630 = 0x0276
+        raw = b'\x02\x76'
+        assert decode_value(raw, "hex2time") == "06:30"
+
+
+class TestDecodeHex2Error:
+    """Tests for hex2error decoding (4-byte LSB-first bitmap → fault list).
+
+    Matches FHEM: bitmap2string(unpack('b32', pack('H*',$value)), \\%faultmap)
+    Bit position N (0-indexed, LSB-first within each byte) maps to
+    fault key str(N+1) in SELECT_MAP['faultmap'].
+    """
+
+    def test_no_errors(self):
+        """Test all-zero bitmap → n.a."""
+        raw = b'\x00\x00\x00\x00'
+        assert decode_value(raw, "hex2error") == "n.a."
+
+    def test_single_error_f01_anode_fault(self):
+        """Test bit 0 of byte 0 (= 0x01) → F01_AnodeFault."""
+        # Byte 0 bit 0 = 0x01 → fault key "1" → F01_AnodeFault
+        raw = b'\x01\x00\x00\x00'
+        assert decode_value(raw, "hex2error") == "F01_AnodeFault"
+
+    def test_single_error_f02(self):
+        """Test bit 1 of byte 0 (= 0x02) → F02_SafetyTempDelimiterEngaged."""
+        raw = b'\x02\x00\x00\x00'
+        assert decode_value(raw, "hex2error") == "F02_SafetyTempDelimiterEngaged"
+
+    def test_single_error_f03(self):
+        """Test bit 2 of byte 0 (= 0x04) → F03_HighPreasureGuardFault."""
+        raw = b'\x04\x00\x00\x00'
+        assert decode_value(raw, "hex2error") == "F03_HighPreasureGuardFault"
+
+    def test_single_error_f07(self):
+        """Test bit 6 of byte 0 (= 0x40) → F07_MainOutputFanFault."""
+        raw = b'\x40\x00\x00\x00'
+        assert decode_value(raw, "hex2error") == "F07_MainOutputFanFault"
+
+    def test_bit8_no_key(self):
+        """Test bit 0 of byte 1 (fault key 9) — no faultmap entry, no output."""
+        # Key "9" is not in faultmap; result should still be n.a.
+        raw = b'\x00\x01\x00\x00'
+        # Bit 8 → key "9" not in faultmap → nothing added
+        assert decode_value(raw, "hex2error") == "n.a."
+
+    def test_f11_low_pressure_sensor(self):
+        """Test bit 10 of 32-bit bitmap (byte 1 bit 2 = 0x04) → F11_LowPreasureSensorFault."""
+        # bit 10 = byte 1 bit 2 = 0x04 in byte 1 → key "11"
+        raw = b'\x00\x04\x00\x00'
+        assert decode_value(raw, "hex2error") == "F11_LowPreasureSensorFault"
+
+    def test_multiple_errors(self):
+        """Test multiple simultaneous active errors."""
+        # F01 (bit 0) + F02 (bit 1) = 0x03 in byte 0
+        raw = b'\x03\x00\x00\x00'
+        result = decode_value(raw, "hex2error")
+        assert "F01_AnodeFault" in result
+        assert "F02_SafetyTempDelimiterEngaged" in result
+
+    def test_all_first_byte_errors(self):
+        """Test all set bits in byte 0 — only known fault keys contribute."""
+        # 0xFF → bits 0-7 → keys 1-8; key 8 not in faultmap
+        raw = b'\xff\x00\x00\x00'
+        result = decode_value(raw, "hex2error")
+        assert "F01_AnodeFault" in result
+        assert "F02_SafetyTempDelimiterEngaged" in result
+        assert "F07_MainOutputFanFault" in result
+        # key "8" is not in faultmap, should not appear
+        assert "F08" not in result
+
+    def test_order_is_lsb_first(self):
+        """Test that faults are listed in bit position order (LSB first)."""
+        # F01 (bit 0) and F03 (bit 2) active
+        raw = b'\x05\x00\x00\x00'  # 0x05 = bits 0 and 2
+        result = decode_value(raw, "hex2error")
+        assert result == "F01_AnodeFault, F03_HighPreasureGuardFault"
