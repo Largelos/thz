@@ -676,7 +676,7 @@ class TestButtonModule:
         """Test that zResetLast10errors write map entry is now type 'button'."""
         from custom_components.thz.register_maps.write_map_X39tech import WRITE_MAP
         entry = WRITE_MAP.get("zResetLast10errors")
-        assert entry is not None, "zResetLast10errors must exist in write_map_X39tech"
+        assert entry is not None, "zResetLast10errors entry not found in WRITE_MAP"
         assert entry["type"] == "button", (
             f"zResetLast10errors should be type 'button', got '{entry['type']}'"
         )

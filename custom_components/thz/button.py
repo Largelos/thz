@@ -73,6 +73,7 @@ class THZButton(THZBaseEntity, ButtonEntity):
 
     async def async_update(self) -> None:
         """Buttons have no readable state; override to suppress polling."""
+        pass
 
     async def async_press(self) -> None:
         """Handle the button press by sending the write command to the device.
