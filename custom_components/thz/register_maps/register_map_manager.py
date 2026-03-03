@@ -313,7 +313,7 @@ class RegisterMapManagerWrite(BaseRegisterMapManager):
                 entry["length"] = length
                 entry["write_mode"] = "block"
                 # step = 1/factor so encode/decode functions scale correctly.
-                step_val = (1.0 / factor) if factor != 0.0 else 1.0
+                step_val = (1.0 / factor) if factor else 1.0
                 entry["step"] = str(step_val)
             else:
                 _LOGGER.debug(

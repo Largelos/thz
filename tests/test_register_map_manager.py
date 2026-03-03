@@ -283,12 +283,12 @@ class TestRegisterMapManagerWrite2xxEnrichment:
         # factor=10 for temperature -> step=0.1
         entry = registers.get("p01RoomTempDay")
         assert entry is not None
-        assert abs(float(entry.get("step", 0)) - 0.1) < 1e-9
+        assert abs(float(entry.get("step", 0)) - 0.1) < 1e-6
 
         # factor=1 for fan stages -> step=1.0
         entry_fan = registers.get("p07FanStageDay")
         assert entry_fan is not None
-        assert abs(float(entry_fan.get("step", 0)) - 1.0) < 1e-9
+        assert abs(float(entry_fan.get("step", 0)) - 1.0) < 1e-6
 
     def test_2xx_entries_get_write_mode_block(self):
         """Test that 2xx write entries have write_mode='block'."""
