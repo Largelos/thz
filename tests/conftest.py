@@ -41,6 +41,14 @@ class MockTimeEntity(MockEntity):
     """Mock time entity."""
     pass
 
+class MockBinarySensorEntity(MockEntity):
+    """Mock binary sensor entity."""
+    pass
+
+class MockButtonEntity(MockEntity):
+    """Mock button entity."""
+    pass
+
 # Mock Home Assistant modules
 sys.modules['homeassistant'] = MagicMock()
 sys.modules['homeassistant.config_entries'] = MagicMock()
@@ -101,6 +109,17 @@ sys.modules['homeassistant.components.select'] = select_mock
 time_mock = MagicMock()
 time_mock.TimeEntity = MockTimeEntity
 sys.modules['homeassistant.components.time'] = time_mock
+
+# Mock binary_sensor component
+binary_sensor_mock = MagicMock()
+binary_sensor_mock.BinarySensorEntity = MockBinarySensorEntity
+binary_sensor_mock.BinarySensorDeviceClass = MagicMock()
+sys.modules['homeassistant.components.binary_sensor'] = binary_sensor_mock
+
+# Mock button component
+button_mock = MagicMock()
+button_mock.ButtonEntity = MockButtonEntity
+sys.modules['homeassistant.components.button'] = button_mock
 
 sys.modules['homeassistant.const'] = MagicMock()
 sys.modules['serial'] = MagicMock()

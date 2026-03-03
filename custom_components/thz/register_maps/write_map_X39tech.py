@@ -85,9 +85,9 @@ WRITE_MAP = {
         "max": "0",
         "unit": "",
         "step": "",
-        "type": "select",
+        "type": "button",
         "device_class": "",
-        "icon": "",
+        "icon": "mdi:trash-can-outline",
         "decode_type": "D1last",
     },
     "zPumpHC": {
