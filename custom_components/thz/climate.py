@@ -4,10 +4,11 @@ This module provides climate entities for the THZ integration.  Two climate
 entities are created when the required data blocks are available:
 
 - **Heating Circuit 1 (HC1)**: reads current / target room temperature from
-  the ``pxxF4`` coordinator.  On firmware 5.39 the entity also supports
-  ``COOL`` mode using ``p99CoolingHC1Switch`` and ``p99CoolingHC1SetTemp``
-  from the write-register map.  Cooling-active status is read from the
-  ``pxx0A0176`` coordinator (``cooling:`` bit).
+  the ``pxxF4`` coordinator.  When the write-register map contains both
+  ``p99CoolingHC1Switch`` and ``p99CoolingHC1SetTemp`` (present on devices
+  that support active cooling), the entity also exposes ``COOL`` mode.
+  Cooling-active status is read from the ``pxx0A0176`` coordinator
+  (``cooling:`` bit).
 
 - **Domestic Hot Water (DHW)**: reads current / target water temperature from
   the ``pxxF3`` coordinator and supports ``HEAT`` mode only.
@@ -71,7 +72,7 @@ _A176_COOLING_BIT = 3
 _HC1_HEAT_SETPOINT_NAMES = ["p01RoomTempDayHC1", "p01RoomTempDay"]
 _DHW_SETPOINT_NAMES = ["p04DHWsetDayTemp", "p04DHWsetTempDay"]
 
-# Write-register names for HC1 cooling (firmware 5.39 only)
+# Write-register names for HC1 cooling (present on devices with active cooling support)
 _HC1_COOL_SWITCH_NAME = "p99CoolingHC1Switch"
 _HC1_COOL_SETPOINT_NAME = "p99CoolingHC1SetTemp"
 
@@ -280,17 +281,18 @@ def _cooling_active(data: bytes) -> bool:
 class THZClimate(CoordinatorEntity, ClimateEntity):
     """Unified climate entity for THZ heating circuits and DHW.
 
-    Supports heating (all firmware versions) and optional cooling (firmware
-    5.39 HC1 only).  The HVAC mode is derived from live coordinator data;
-    setting the mode enables or disables the cooling switch where supported.
+    Supports heating (always) and optional cooling (when the write-register
+    map contains the cooling switch and setpoint entries).  The HVAC mode is
+    derived from live coordinator data; setting the mode enables or disables
+    the cooling switch where supported.
 
     Attributes:
         _heat_setpoint_entry: Write-register entry for the heating setpoint,
             or ``None`` if the device does not support remote writes.
         _cool_switch_entry: Write-register entry for the cooling on/off
-            switch (firmware 5.39 only), or ``None``.
-        _cool_setpoint_entry: Write-register entry for the cooling setpoint
-            (firmware 5.39 only), or ``None``.
+            switch, or ``None`` when cooling is not available.
+        _cool_setpoint_entry: Write-register entry for the cooling setpoint,
+            or ``None`` when cooling is not available.
         _cooling_target_temp: Cached cooling setpoint in °C (populated on
             first update when cooling is supported).
     """
@@ -321,7 +323,7 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
         Args:
             coordinator: Primary DataUpdateCoordinator (pxxF4 or pxxF3).
             cooling_coordinator: Optional coordinator for pxx0A0176 (cooling
-                status); only used for HC1 on firmware 5.39.
+                status bit); only used when cooling entries are present.
             device: THZDevice instance used for write operations.
             device_id: Stable device identifier for the HA device registry.
             translation_key: HA translation key (e.g. ``"heating_circuit"``).
@@ -480,7 +482,7 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
         Returns:
             Current :class:`HVACMode`.
         """
-        # Check cooling-active bit first (firmware 5.39 HC1 only)
+        # Check cooling-active bit first (only when cooling entries are present)
         if self._supports_cooling and self._cooling_coordinator is not None:
             cool_data = self._cooling_coordinator.data
             if cool_data is not None and _cooling_active(cool_data):
@@ -518,7 +520,8 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set the HVAC mode.
 
-        - ``COOL``: enables the cooling switch (firmware 5.39 HC1 only).
+        - ``COOL``: enables the cooling switch (only available when the
+          write-register map contains the cooling entries).
         - ``HEAT`` / ``OFF``: disables the cooling switch (if present).
           Switching the global operating mode off is intentionally not
           supported here because ``pOpMode`` is a device-level register
