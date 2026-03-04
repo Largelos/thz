@@ -290,4 +290,9 @@ class TestWriteBlockValue:
 
         with pytest.raises(ValueError, match="out of range"):
             # offset=4 → payload_offset=3, length=4 → needs payload[3:7] but len=5
-            device.write_block_value(b"\x17", offset=4, length=4, value=b"\xAA\xBB\xCC\xDD")
+            device.write_block_value(
+                b"\x17",
+                offset=4,
+                length=4,
+                value=b"\xAA\xBB\xCC\xDD",
+            )
