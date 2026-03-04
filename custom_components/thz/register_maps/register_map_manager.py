@@ -319,7 +319,8 @@ class RegisterMapManagerWrite(BaseRegisterMapManager):
                 entry["step"] = str(step_val)
             else:
                 _LOGGER.debug(
-                    "No register map entry found for 2xx write parameter '%s'", name
+                    "No register map entry found for 2xx write parameter '%s'",
+                    name,
                 )
 
             # Promote "pclean" to the standard "number" HA entity type.
