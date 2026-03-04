@@ -219,7 +219,6 @@ class TestWriteBlockValue:
 
     def _make_device_with_block(self, block_data: bytes):
         """Create a THZDevice mock with read_write_register returning block_data."""
-        from unittest.mock import MagicMock, patch
 
         device = THZDevice(connection="usb", port="/dev/null")
 
