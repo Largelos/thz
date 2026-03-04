@@ -300,7 +300,9 @@ class RegisterMapManagerWrite(BaseRegisterMapManager):
             block_addr = parent_block_map.get(parent)
             if block_addr is None:
                 _LOGGER.debug(
-                    "Unknown parent '%s' for 2xx write entry '%s'; skipping", parent, name
+                    "Unknown parent '%s' for 2xx write entry '%s'; skipping",
+                    parent,
+                    name,
                 )
                 continue
 
