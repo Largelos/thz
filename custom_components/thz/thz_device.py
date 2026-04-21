@@ -558,8 +558,6 @@ class THZDevice:
                 raise THZRegisterNotSupportedError("Register not supported by device firmware")
             _LOGGER.error("Unknown response: %s", data.hex())
             return None
-        except THZRegisterNotSupportedError:
-            raise
         except Exception as e:
             _LOGGER.error("Error decoding response: %s", e)
             return None
