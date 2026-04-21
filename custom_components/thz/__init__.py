@@ -240,7 +240,8 @@ async def _async_update_block(hass: HomeAssistant, device: THZDevice, block_name
             return await hass.async_add_executor_job(device.read_block, block_bytes, "get")
     except THZRegisterNotSupportedError:
         _LOGGER.warning(
-            "Block %s is not supported by this device firmware, skipping",
+            "Block %s is not supported by this device firmware and will show as "
+            "unavailable. This is expected for some firmware versions.",
             block_name,
         )
         return None

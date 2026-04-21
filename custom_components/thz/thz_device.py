@@ -555,7 +555,7 @@ class THZDevice:
                 _LOGGER.error("Unknown command")
                 return None
             if header == b"\x01\x04":
-                raise THZRegisterNotSupportedError("Register not supported by device")
+                raise THZRegisterNotSupportedError("Register not supported by device firmware")
             _LOGGER.error("Unknown response: %s", data.hex())
             return None
         except THZRegisterNotSupportedError:
