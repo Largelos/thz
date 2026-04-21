@@ -11,7 +11,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DEFAULT_UPDATE_INTERVAL, DOMAIN, should_hide_entity_by_default
-from .thz_device import THZDevice
+from .thz_device import THZDevice, THZRegisterNotSupportedError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -238,6 +238,12 @@ async def _async_update_block(hass: HomeAssistant, device: THZDevice, block_name
         _LOGGER.debug("Reading block %s", block_name)
         async with device.lock:
             return await hass.async_add_executor_job(device.read_block, block_bytes, "get")
+    except THZRegisterNotSupportedError:
+        _LOGGER.warning(
+            "Block %s is not supported by this device firmware, skipping",
+            block_name,
+        )
+        return None
     except Exception as err:
         raise UpdateFailed(f"Error reading {block_name}: {err}") from err
 
