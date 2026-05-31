@@ -160,7 +160,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     # Forward setup to platforms
     await hass.config_entries.async_forward_entry_setups(
         config_entry,
-        ["sensor", "binary_sensor", "number", "switch", "select", "time", "button"],
+        ["sensor", "binary_sensor", "number", "switch", "select", "time", "button", "climate"],
     )
 
     # One-time migration: disable entities that should be hidden by default
