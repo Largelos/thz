@@ -2785,6 +2785,217 @@
       "programfan_mo_so_2_end": {
         "name": "Lüftung Programm Mo-So 3 Ende"
       }
+    },
+    "climate": {
+      "heating_circuit": {
+        "name": "Heizkreis"
+      },
+      "dhw_heating": {
+        "name": "Warmwasser"
+      }
+    },
+    "binary_sensor": {
+      "booster_hc": {
+        "name": "Zusatzheizung HK"
+      },
+      "booster_stage_1": {
+        "name": "Zusatzheizung Stufe 1"
+      },
+      "booster_stage_2": {
+        "name": "Zusatzheizung Stufe 2"
+      },
+      "booster_stage_3": {
+        "name": "Zusatzheizung Stufe 3"
+      },
+      "compressor": {
+        "name": "Kompressor"
+      },
+      "cooling": {
+        "name": "Kühlung"
+      },
+      "defrost": {
+        "name": "Abtauung"
+      },
+      "dhw_pump": {
+        "name": "Warmwasserpumpe"
+      },
+      "diverter_valve": {
+        "name": "Umschaltventil"
+      },
+      "evaporator_ice_monitor": {
+        "name": "Verdampfer Eisüberwachung"
+      },
+      "evu_release": {
+        "name": "EVU-Freigabe"
+      },
+      "filter_both": {
+        "name": "Filter (Beide)"
+      },
+      "filter_down": {
+        "name": "Filter (Unten)"
+      },
+      "filter_up": {
+        "name": "Filter (Oben)"
+      },
+      "heat_pipe_valve": {
+        "name": "Wärmerohrventil"
+      },
+      "heating_circuit_pump": {
+        "name": "Heizkreispumpe"
+      },
+      "heating_dhw": {
+        "name": "Warmwasserheizung"
+      },
+      "heating_hc": {
+        "name": "Heizkreisheizung"
+      },
+      "high_pressure_sensor": {
+        "name": "Hochdrucksensor"
+      },
+      "low_pressure_sensor": {
+        "name": "Niederdrucksensor"
+      },
+      "mixer_closed": {
+        "name": "Mischer Zu"
+      },
+      "mixer_open": {
+        "name": "Mischer Auf"
+      },
+      "oven_fireplace": {
+        "name": "Ofen / Kamin"
+      },
+      "prog_dhw_friday": {
+        "name": "Warmwasser Programm Freitag"
+      },
+      "prog_dhw_monday": {
+        "name": "Warmwasser Programm Montag"
+      },
+      "prog_dhw_saturday": {
+        "name": "Warmwasser Programm Samstag"
+      },
+      "prog_dhw_sunday": {
+        "name": "Warmwasser Programm Sonntag"
+      },
+      "prog_dhw_thursday": {
+        "name": "Warmwasser Programm Donnerstag"
+      },
+      "prog_dhw_tuesday": {
+        "name": "Warmwasser Programm Dienstag"
+      },
+      "prog_dhw_wednesday": {
+        "name": "Warmwasser Programm Mittwoch"
+      },
+      "prog_fan1_friday": {
+        "name": "Lüfter 1 Programm Freitag"
+      },
+      "prog_fan1_monday": {
+        "name": "Lüfter 1 Programm Montag"
+      },
+      "prog_fan1_saturday": {
+        "name": "Lüfter 1 Programm Samstag"
+      },
+      "prog_fan1_sunday": {
+        "name": "Lüfter 1 Programm Sonntag"
+      },
+      "prog_fan1_thursday": {
+        "name": "Lüfter 1 Programm Donnerstag"
+      },
+      "prog_fan1_tuesday": {
+        "name": "Lüfter 1 Programm Dienstag"
+      },
+      "prog_fan1_wednesday": {
+        "name": "Lüfter 1 Programm Mittwoch"
+      },
+      "prog_fan2_friday": {
+        "name": "Lüfter 2 Programm Freitag"
+      },
+      "prog_fan2_monday": {
+        "name": "Lüfter 2 Programm Montag"
+      },
+      "prog_fan2_saturday": {
+        "name": "Lüfter 2 Programm Samstag"
+      },
+      "prog_fan2_sunday": {
+        "name": "Lüfter 2 Programm Sonntag"
+      },
+      "prog_fan2_thursday": {
+        "name": "Lüfter 2 Programm Donnerstag"
+      },
+      "prog_fan2_tuesday": {
+        "name": "Lüfter 2 Programm Dienstag"
+      },
+      "prog_fan2_wednesday": {
+        "name": "Lüfter 2 Programm Mittwoch"
+      },
+      "prog_hc1_friday": {
+        "name": "HK1 Programm Freitag"
+      },
+      "prog_hc1_monday": {
+        "name": "HK1 Programm Montag"
+      },
+      "prog_hc1_saturday": {
+        "name": "HK1 Programm Samstag"
+      },
+      "prog_hc1_sunday": {
+        "name": "HK1 Programm Sonntag"
+      },
+      "prog_hc1_thursday": {
+        "name": "HK1 Programm Donnerstag"
+      },
+      "prog_hc1_tuesday": {
+        "name": "HK1 Programm Dienstag"
+      },
+      "prog_hc1_wednesday": {
+        "name": "HK1 Programm Mittwoch"
+      },
+      "prog_hc2_friday": {
+        "name": "HK2 Programm Freitag"
+      },
+      "prog_hc2_monday": {
+        "name": "HK2 Programm Montag"
+      },
+      "prog_hc2_saturday": {
+        "name": "HK2 Programm Samstag"
+      },
+      "prog_hc2_sunday": {
+        "name": "HK2 Programm Sonntag"
+      },
+      "prog_hc2_thursday": {
+        "name": "HK2 Programm Donnerstag"
+      },
+      "prog_hc2_tuesday": {
+        "name": "HK2 Programm Dienstag"
+      },
+      "prog_hc2_wednesday": {
+        "name": "HK2 Programm Mittwoch"
+      },
+      "pump_hc": {
+        "name": "Pumpe HK"
+      },
+      "quick_air_vent": {
+        "name": "Schnellentlüftung"
+      },
+      "service": {
+        "name": "Service"
+      },
+      "signal_anode": {
+        "name": "Anode Signal"
+      },
+      "solar_pump": {
+        "name": "Solarpumpe"
+      },
+      "stb": {
+        "name": "Sicherheitstemperaturbegrenzer (STB)"
+      },
+      "switching_prog": {
+        "name": "Schaltprogramm"
+      },
+      "vent_stage": {
+        "name": "Lüfterstufe"
+      },
+      "window_open": {
+        "name": "Fenster offen"
+      }
     }
   }
 }
