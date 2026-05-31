@@ -108,7 +108,7 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
             )
             # Keep previous value on error
 
-    async def turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch by sending a command to the device."""
         _LOGGER.debug("Turning on switch %s", self.name)
 
@@ -130,7 +130,7 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
                 self.name, err, exc_info=True
             )
 
-    async def turn_off(self, **kwargs: Any) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch by sending a command to the device."""
         _LOGGER.debug("Turning off switch %s", self.name)
 
