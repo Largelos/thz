@@ -21,6 +21,7 @@ from .const import (
     DEFAULT_BAUDRATE,
     DEFAULT_PORT,
     DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_WRITE_INTERVAL,
     DOMAIN,
 )
 from .thz_device import THZDevice
@@ -256,7 +257,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Write interval
         schema_dict[vol.Optional(
             "write_interval",
-            default=defaults.get("write_interval", DEFAULT_UPDATE_INTERVAL),
+            default=defaults.get("write_interval", DEFAULT_WRITE_INTERVAL),
         )] = vol.All(int, vol.Range(min=5, max=86400))
 
         return vol.Schema(schema_dict)
@@ -477,7 +478,7 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             refresh_intervals = {b: user_input[f"refresh_{b}"] for b in blocks}
-            write_interval = user_input.get("write_interval", DEFAULT_UPDATE_INTERVAL)
+            write_interval = user_input.get("write_interval", DEFAULT_WRITE_INTERVAL)
             data = {
                 **self.connection_data,
                 "refresh_intervals": refresh_intervals,
@@ -489,12 +490,12 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema_dict = {}
         for block in blocks:
-            schema_dict[vol.Optional(f"refresh_{block}", default=600)] = vol.All(
+            schema_dict[vol.Optional(f"refresh_{block}", default=DEFAULT_UPDATE_INTERVAL)] = vol.All(
                 int, vol.Range(min=5, max=86400)
             )
 
         # Add write interval for number/switch/select/time entities
-        write_key = vol.Optional("write_interval", default=DEFAULT_UPDATE_INTERVAL)
+        write_key = vol.Optional("write_interval", default=DEFAULT_WRITE_INTERVAL)
         schema_dict[write_key] = vol.All(
             int, vol.Range(min=5, max=86400)
         )
@@ -505,8 +506,9 @@ class THZConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=schema,
             description_placeholders={
                 "hint": (
-                    "Update interval per block (seconds), write_interval for"
-                    " write entities (number/switch/select/time)"
+                    f"Update interval per block (seconds, default {DEFAULT_UPDATE_INTERVAL}),"
+                    f" write_interval for write entities (number/switch/select/time,"
+                    f" default {DEFAULT_WRITE_INTERVAL})"
                 ),
             },
         )

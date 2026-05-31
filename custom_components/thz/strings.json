@@ -96,7 +96,7 @@
       },
       "refresh_blocks": {
         "title": "Configure Polling Intervals",
-        "description": "Set how often (in seconds) each register block should be polled from your heat pump. Lower values provide faster updates but increase system load. The write_interval controls how often writable entities (number/switch/select/time) are updated after changes.\n\nRecommended: 300-600 seconds for read blocks, 60 seconds for write interval.",
+        "description": "Set how often (in seconds) each register block should be polled from your heat pump. Lower values provide faster updates but increase system load. The write_interval controls how often writable entities (number/switch/select/time) are updated after changes.\n\nRecommended: 300-600 seconds for read blocks, 3600 seconds for write interval.",
         "data": {
           "write_interval": "Write Interval (seconds)",
           "refresh_pxxFB": "Poll interval: Temperatures & Status (s)",

@@ -16,6 +16,7 @@ Constants:
     DEFAULT_BAUDRATE: Default baud rate for serial communication.
     DEFAULT_PORT: Default port for IP connection.
     DEFAULT_UPDATE_INTERVAL: Default update interval in seconds.
+    DEFAULT_WRITE_INTERVAL: Default update interval for write entities in seconds.
 """
 
 DOMAIN = "thz"
@@ -30,6 +31,7 @@ CONNECTION_IP = "ip"
 DEFAULT_BAUDRATE = 115200
 DEFAULT_PORT = 2323
 DEFAULT_UPDATE_INTERVAL = 600  # in seconds
+DEFAULT_WRITE_INTERVAL = 3600  # in seconds, for write entities (number/switch/select/time)
 
 # Write register offsets and lengths
 # These values are used when reading/writing individual parameters

@@ -97,7 +97,7 @@
       },
       "refresh_blocks": {
         "title": "Abfrageintervalle konfigurieren",
-        "description": "Legen Sie fest, wie oft (in Sekunden) jeder Registerblock von Ihrer Wärmepumpe abgefragt werden soll. Niedrigere Werte liefern schnellere Aktualisierungen, erhöhen aber die Systemlast. Das write_interval steuert, wie oft beschreibbare Entitäten (Nummer/Schalter/Auswahl/Zeit) nach Änderungen aktualisiert werden.\n\nEmpfohlen: 300-600 Sekunden für Leseblöcke, 60 Sekunden für Schreibintervall.",
+        "description": "Legen Sie fest, wie oft (in Sekunden) jeder Registerblock von Ihrer Wärmepumpe abgefragt werden soll. Niedrigere Werte liefern schnellere Aktualisierungen, erhöhen aber die Systemlast. Das write_interval steuert, wie oft beschreibbare Entitäten (Nummer/Schalter/Auswahl/Zeit) nach Änderungen aktualisiert werden.\n\nEmpfohlen: 300-600 Sekunden für Leseblöcke, 3600 Sekunden für Schreibintervall.",
         "data": {
           "write_interval": "Schreibintervall (Sekunden)",
           "refresh_pxxFB": "Abfrageintervall: Temperaturen & Status (s)",
