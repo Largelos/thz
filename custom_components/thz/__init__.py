@@ -524,7 +524,7 @@ async def _async_update_block(
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Remove Config Entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(
-        entry, ["sensor", "select", "number", "time", "switch"]
+        entry, ["sensor", "binary_sensor", "number", "switch", "select", "time", "button", "climate"]
     )
     if unload_ok:
         # Clean up device connection
