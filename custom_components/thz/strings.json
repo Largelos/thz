@@ -1165,6 +1165,12 @@
       },
       "x76": {
         "name": "Register X76"
+      },
+      "power_nd": {
+        "name": "Power Nd"
+      },
+      "power_hd": {
+        "name": "Power Hd"
       }
     },
     "number": {

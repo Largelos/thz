@@ -1164,6 +1164,12 @@
       },
       "x76": {
         "name": "Register X76"
+      },
+      "power_nd": {
+        "name": "Leistung Nd"
+      },
+      "power_hd": {
+        "name": "Leistung Hd"
       }
     },
     "number": {
