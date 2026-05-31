@@ -18,6 +18,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+try:
+    from homeassistant.exceptions import HomeAssistantError
+except ModuleNotFoundError:  # pragma: no cover - test stubs may not expose this module
+    class HomeAssistantError(Exception):
+        """Fallback error type for environments without Home Assistant exceptions."""
+
 from .base_entity import THZBaseEntity
 from .entity_translations import get_translation_key
 from .platform_setup import async_setup_write_platform
@@ -71,9 +77,16 @@ class THZButton(THZBaseEntity, ButtonEntity):
             translation_key=get_translation_key(name),
         )
 
+    async def async_added_to_hass(self) -> None:
+        """Skip base periodic polling setup for stateless buttons."""
+        # Intentionally do not call super().async_added_to_hass() here because
+        # THZBaseEntity schedules a periodic update timer that is not needed
+        # for write-only button entities without readable state.
+        return
+
     async def async_update(self) -> None:
         """Buttons have no readable state; override to suppress polling."""
-        pass
+        return
 
     async def async_press(self) -> None:
         """Handle the button press by sending the write command to the device.
@@ -91,7 +104,10 @@ class THZButton(THZBaseEntity, ButtonEntity):
                     b"\x00",
                 )
             _LOGGER.info("Button %s pressed successfully", self.name)
-        except (ValueError, TypeError, OSError) as err:
+        except (ValueError, TypeError, OSError, RuntimeError, ConnectionError) as err:
             _LOGGER.error(
                 "Error pressing button %s: %s", self.name, err, exc_info=True
             )
+            raise HomeAssistantError(
+                f"Unable to execute THZ button '{self.name}'"
+            ) from err
