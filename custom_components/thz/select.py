@@ -148,8 +148,8 @@ class THZSelect(THZBaseEntity, SelectEntity):
                 )
 
             self._attr_current_option = option
-        except (ValueError, TypeError) as err:
+        except Exception as err:  # noqa: BLE001
             _LOGGER.error(
-                "Error encoding select %s to option %s: %s",
+                "Error setting select %s to option %s: %s",
                 self.name, option, err, exc_info=True
             )
