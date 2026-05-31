@@ -208,6 +208,28 @@ class TestBaseRegisterMapManager:
         assert isinstance(write_maps, list)
         assert isinstance(read_maps, list)
 
+    def test_non_cooling_539_keeps_non_cooling_read_blocks(self):
+        """Test non-cooling 5.39 keeps shared blocks and removes cooling-only ones."""
+        manager = RegisterMapManager("539", has_cooling=False)
+
+        assert "readings_map_539" in manager.readings_map_names
+        assert "pxx0A033B" in manager.get_all_registers()
+        assert "pxx0A0648" not in manager.get_all_registers()
+        assert "pxx0B0264" not in manager.get_all_registers()
+        assert "pxx0C0264" not in manager.get_all_registers()
+        assert "pxx0A0648" not in manager.get_paired_blocks()
+
+    def test_non_cooling_539_keeps_non_cooling_write_entries(self):
+        """Test non-cooling 5.39 keeps shared write entries and removes cooling-only ones."""
+        manager = RegisterMapManagerWrite("539", has_cooling=False)
+
+        assert "write_map_539" in manager.write_map_names
+        assert "p99PumpRateHC" in manager.get_all_registers()
+        assert "p99PumpRateDHW" in manager.get_all_registers()
+        assert "p75passiveCooling" not in manager.get_all_registers()
+        assert "p99CoolingHC1Switch" not in manager.get_all_registers()
+        assert "p99CoolingHC2Switch" not in manager.get_all_registers()
+
     def test_merge_maps_with_lists(self):
         """Test merging maps with list entries."""
         manager = RegisterMapManager("206")

@@ -86,20 +86,22 @@ class TestRegisterMapManagerHasCooling:
         manager = RegisterMapManager("539", has_cooling=True)
         assert "readings_map_539" in manager.readings_map_names
 
-    def test_has_cooling_false_excludes_539_read_map(self):
-        """has_cooling=False removes readings_map_539 from read maps."""
+    def test_has_cooling_false_keeps_539_read_map(self):
+        """has_cooling=False keeps readings_map_539 and filters its cooling blocks."""
         manager = RegisterMapManager("539", has_cooling=False)
-        assert "readings_map_539" not in manager.readings_map_names
+        assert "readings_map_539" in manager.readings_map_names
+        assert "pxx0A0648" not in manager.get_all_registers()
 
     def test_has_cooling_true_includes_539_write_map(self):
         """Default (has_cooling=True) includes write_map_539."""
         manager = RegisterMapManagerWrite("539", has_cooling=True)
         assert "write_map_539" in manager.write_map_names
 
-    def test_has_cooling_false_excludes_539_write_map(self):
-        """has_cooling=False removes write_map_539 from write maps."""
+    def test_has_cooling_false_keeps_539_write_map(self):
+        """has_cooling=False keeps write_map_539 and filters its cooling entries."""
         manager = RegisterMapManagerWrite("539", has_cooling=False)
-        assert "write_map_539" not in manager.write_map_names
+        assert "write_map_539" in manager.write_map_names
+        assert "p99CoolingHC1Switch" not in manager.get_all_registers()
 
     def test_has_cooling_false_keeps_439_maps(self):
         """Excluding 539 maps does not remove 439 read maps."""
@@ -145,16 +147,17 @@ class TestRegisterMapManagerHasCooling:
             manager_with.readings_map_names == manager_without.readings_map_names
         )
 
-    def test_default_firmware_no_cooling_excludes_539_maps(self):
-        """Unknown firmware (default) also respects has_cooling=False."""
+    def test_default_firmware_no_cooling_filters_539_entries(self):
+        """Unknown firmware (default) keeps 5.39 maps but filters cooling entries."""
         manager = RegisterMapManager("unknown_fw", has_cooling=False)
-        assert "readings_map_539" not in manager.readings_map_names
+        assert "readings_map_539" in manager.readings_map_names
         assert "readings_map_439" in manager.readings_map_names
+        assert "pxx0A0648" not in manager.get_all_registers()
 
     def test_select_maps_for_firmware_no_cooling(self):
-        """_select_maps_for_firmware excludes 539 maps with has_cooling=False."""
+        """_select_maps_for_firmware still returns the 5.39 maps."""
         manager = RegisterMapManager("206")
         write, read = manager._select_maps_for_firmware("default", has_cooling=False)
-        assert "readings_map_539" not in read
-        assert "write_map_539" not in write
+        assert "readings_map_539" in read
+        assert "write_map_539" in write
         assert "readings_map_439" in read
