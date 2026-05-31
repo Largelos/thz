@@ -208,6 +208,12 @@ class THZValueCodec:
         key_str = reverse_map[option]
         value = int(key_str)
 
+        # "2opmode" type: device uses single-byte encoding (FHEM legacy format)
+        # Value goes in first byte; second byte is always zero padding.
+        # All other types use 2-byte big-endian.
+        if decode_type == "2opmode":
+            return bytes([value & 0xFF, 0])
+
         # Encode as 2-byte big-endian (matches device register width)
         return value.to_bytes(2, byteorder="big", signed=False)
 
@@ -231,8 +237,13 @@ class THZValueCodec:
         if decode_type not in SELECT_MAP:
             raise ValueError(f"Unknown decode_type: {decode_type}")
 
-        # Decode as big-endian (matches device register byte order)
-        value = int.from_bytes(value_bytes, byteorder="big", signed=False)
+        # "2opmode" type: device returns value in first byte only (FHEM legacy format)
+        # FHEM reads 2 hex chars (1 byte) at the value offset; second byte is padding.
+        if decode_type == "2opmode":
+            value = value_bytes[0]
+        else:
+            # Decode as big-endian (matches device register byte order)
+            value = int.from_bytes(value_bytes, byteorder="big", signed=False)
 
         # Special case for SomWinMode: zero-pad to 2 digits
         if decode_type == "SomWinMode":
