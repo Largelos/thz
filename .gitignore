@@ -8,3 +8,4 @@ __pycache__/
 htmlcov/
 .coverage
 deploy.ps1
+deploy.config.ps1
