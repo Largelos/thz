@@ -29,6 +29,24 @@ supported_firmwares = [
 ]  # Add other supported firmware versions here
 _LOGGER = logging.getLogger(__name__)
 
+# Cooling-only entries within the 5.39 maps.
+_COOLING_READ_BLOCKS: frozenset[str] = frozenset(
+    {"pxx0A0648", "pxx0B0264", "pxx0C0264"}
+)
+_COOLING_WRITE_KEYS: frozenset[str] = frozenset(
+    {
+        "p75passiveCooling",
+        "p99CoolingHC1Switch",
+        "p99CoolingHC1SetTemp",
+        "p99CoolingHC1HysterFlowTemp",
+        "p99CoolingHC1HysterRoomTemp",
+        "p99CoolingHC2Switch",
+        "p99CoolingHC2SetTemp",
+        "p99CoolingHC2HysterFlowTemp",
+        "p99CoolingHC2HysterRoomTemp",
+    }
+)
+
 # Data-driven firmware → maps configuration
 FIRMWARE_MAPS = {
     "206": {
@@ -73,14 +91,18 @@ class BaseRegisterMapManager:
         command_map_name: str,
         map_attr: str,
         entry_type: type,
+        has_cooling: bool = True,
     ) -> None:
         """Initialize the register map manager for a given firmware version."""
         self.firmware_version = firmware_version
+        self._has_cooling = has_cooling
         self._package = __package__
         self._base_map = self._load_map(base_map_name, map_attr, entry_type)
         self._map_attr_for_base = map_attr
         # Decide maps from the data table
-        write_names, read_names = self._select_maps_for_firmware(firmware_version)
+        write_names, read_names = self._select_maps_for_firmware(
+            firmware_version, has_cooling
+        )
         self._write_map_names = write_names
         self._readings_map_names = read_names
 
@@ -103,7 +125,9 @@ class BaseRegisterMapManager:
 
         self._merged_map = merged
 
-    def _select_maps_for_firmware(self, firmware: str) -> tuple[list[str], list[str]]:
+    def _select_maps_for_firmware(
+        self, firmware: str, has_cooling: bool = True
+    ) -> tuple[list[str], list[str]]:
         """Return (write_list, read_list) for firmware."""
         cfg = FIRMWARE_MAPS.get(firmware, FIRMWARE_MAPS["default"])
         # return shallow copies to avoid accidental external mutation
@@ -129,7 +153,18 @@ class BaseRegisterMapManager:
             return {}
 
         # Filter entries by expected type to avoid mixing different map shapes
-        return {k: v for k, v in full_map.items() if isinstance(v, entry_type)}
+        filtered_map = {k: v for k, v in full_map.items() if isinstance(v, entry_type)}
+        if not self._has_cooling:
+            filtered_map = self._filter_cooling_entries(module_name, filtered_map)
+        return filtered_map
+
+    def _filter_cooling_entries(self, module_name: str, register_map: dict[str, Any]) -> dict[str, Any]:
+        """Remove cooling-only entries from 5.39 maps for non-cooling devices."""
+        if module_name == "readings_map_539":
+            return {k: v for k, v in register_map.items() if k not in _COOLING_READ_BLOCKS}
+        if module_name == "write_map_539":
+            return {k: v for k, v in register_map.items() if k not in _COOLING_WRITE_KEYS}
+        return register_map
 
     def _normalize_name(self, name) -> str:
         """Normalize a sensor name for comparison by stripping whitespace."""
@@ -183,6 +218,8 @@ class BaseRegisterMapManager:
             mod = sys.modules.get(full_name)
             if mod and hasattr(mod, "PAIRED_BLOCKS"):
                 paired.update(mod.PAIRED_BLOCKS)
+        if not self._has_cooling:
+            paired = {k: v for k, v in paired.items() if k not in _COOLING_READ_BLOCKS}
         return paired
 
     def get_registers_for_block(self, block: str) -> Any:
@@ -207,7 +244,7 @@ class BaseRegisterMapManager:
 class RegisterMapManager(BaseRegisterMapManager):
     """Manages read register maps for different firmware versions."""
 
-    def __init__(self, firmware_version: str) -> None:
+    def __init__(self, firmware_version: str, has_cooling: bool = True) -> None:
         """Initialize the register map manager for a given firmware version."""
         super().__init__(
             firmware_version,
@@ -215,13 +252,14 @@ class RegisterMapManager(BaseRegisterMapManager):
             command_map_name="register_map",
             map_attr="REGISTER_MAP",
             entry_type=list,
+            has_cooling=has_cooling,
         )
 
 
 class RegisterMapManagerWrite(BaseRegisterMapManager):
     """Manages write register maps for different firmware versions."""
 
-    def __init__(self, firmware_version: str) -> None:
+    def __init__(self, firmware_version: str, has_cooling: bool = True) -> None:
         """Initialize the write register map manager for a given firmware version."""
         super().__init__(
             firmware_version,
@@ -229,6 +267,7 @@ class RegisterMapManagerWrite(BaseRegisterMapManager):
             command_map_name="write_map",
             map_attr="WRITE_MAP",
             entry_type=dict,
+            has_cooling=has_cooling,
         )
 
     def _merge_maps(self, base: dict, override: dict) -> dict:

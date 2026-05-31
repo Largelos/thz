@@ -46,6 +46,7 @@ class THZDevice:
         # Placeholders
         self.ser: serial.Serial | socket.socket | None = None
         self._firmware_version: str | None = None
+        self.has_cooling: bool = True
         self.register_map_manager: RegisterMapManager | None = None
         self.write_register_map_manager: RegisterMapManagerWrite | None = None
 
@@ -77,9 +78,26 @@ class THZDevice:
         # Load firmware-specific register maps
         if self._firmware_version is None:
             raise RuntimeError("Firmware version could not be determined")
-        self.register_map_manager = RegisterMapManager(self._firmware_version)
+
+        # Probe for cooling support on 539-like firmware (v5.00+).
+        # Devices like the LWZ404 run 539 firmware but lack cooling hardware;
+        # they reply to cooling registers with an all-zero payload.
+        # If detected, exclude the 539 cooling maps to avoid spurious entities.
+        fw_int = int(self._firmware_version) if self._firmware_version.isdigit() else 0
+        if fw_int >= 500:
+            self.has_cooling = await hass.async_add_executor_job(
+                self._probe_cooling_support
+            )
+            if not self.has_cooling:
+                _LOGGER.info(
+                    "Cooling not supported on this device; 539 cooling maps excluded"
+                )
+
+        self.register_map_manager = RegisterMapManager(
+            self._firmware_version, has_cooling=self.has_cooling
+        )
         self.write_register_map_manager = RegisterMapManagerWrite(
-            self._firmware_version
+            self._firmware_version, has_cooling=self.has_cooling
         )
 
         self._initialized = True
@@ -654,6 +672,33 @@ class THZDevice:
         except (OSError, RuntimeError) as e:
             _LOGGER.error("Firmware-Version konnte nicht gelesen werden: %s", e)
             return ""
+
+    def _probe_cooling_support(self) -> bool:
+        """Probe whether the device supports cooling hardware.
+
+        Reads the cooling HC total energy register (command 0A0648).
+        Devices without cooling hardware (e.g. LWZ404) return an all-zero
+        payload for this register, which is the detection pattern described
+        in the issue report.
+
+        Returns:
+            True if cooling is supported, False if the payload is all zeros.
+        """
+        try:
+            result = self.read_block(bytes.fromhex("0A0648"), "get")
+            # Response layout: [checksum, addr0, addr1, addr2, val0, val1, ...]
+            # Bytes 4-5 hold the register value; all zeros = no cooling hardware.
+            if len(result) >= 6 and result[4:6] == b"\x00\x00":
+                _LOGGER.debug(
+                    "Cooling probe: register 0A0648 returned zero payload – no cooling"
+                )
+                return False
+            return True
+        except (RuntimeError, ConnectionError, OSError) as e:
+            _LOGGER.warning(
+                "Cooling probe failed, assuming cooling is supported: %s", e
+            )
+            return True
 
     def read_value(
         self, addr_bytes: bytes, get_or_set: str, offset: int, length: int
