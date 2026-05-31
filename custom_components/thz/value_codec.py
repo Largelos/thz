@@ -208,8 +208,8 @@ class THZValueCodec:
         key_str = reverse_map[option]
         value = int(key_str)
 
-        # Encode as single byte (little-endian as per original select.py)
-        return value.to_bytes(1, byteorder="little", signed=False)
+        # Encode as 2-byte big-endian (matches device register width)
+        return value.to_bytes(2, byteorder="big", signed=False)
 
     @staticmethod
     def decode_select(value_bytes: bytes, decode_type: str) -> str | None:
@@ -231,8 +231,8 @@ class THZValueCodec:
         if decode_type not in SELECT_MAP:
             raise ValueError(f"Unknown decode_type: {decode_type}")
 
-        # Decode as little-endian (as per original select.py)
-        value = int.from_bytes(value_bytes, byteorder="little", signed=False)
+        # Decode as big-endian (matches device register byte order)
+        value = int.from_bytes(value_bytes, byteorder="big", signed=False)
 
         # Special case for SomWinMode: zero-pad to 2 digits
         if decode_type == "SomWinMode":
