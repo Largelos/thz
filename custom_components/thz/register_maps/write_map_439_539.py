@@ -264,7 +264,7 @@ WRITE_MAP = {
     "p04DHWsetDayTemp": {
         "command": "0A0013",
         "min": "10",
-        "max": "55",
+        "max": "65",
         "unit": "°C",
         "step": 0.1,
         "type": "number",
@@ -275,7 +275,7 @@ WRITE_MAP = {
     "p05DHWsetNightTemp": {
         "command": "0A05BF",
         "min": "10",
-        "max": "55",
+        "max": "65",
         "unit": "°C",
         "step": 0.1,
         "type": "number",

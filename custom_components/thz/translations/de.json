@@ -23,6 +23,7 @@
           "refresh_pxxF2": "Abfrageintervall: Wärmeanforderung & Betriebsmodus (s)",
           "refresh_pxxF3": "Abfrageintervall: Warmwasser-Status (s)",
           "refresh_pxxF4": "Abfrageintervall: Heizkreis-Status (s)",
+          "refresh_pxxF5": "Abfrageintervall: Heizkreis2-Status (s)",
           "refresh_pxxFC": "Abfrageintervall: Datum & Uhrzeit (s)",
           "refresh_pxxFD": "Abfrageintervall: Firmware-Datum (s)",
           "refresh_pxxFE": "Abfrageintervall: Hardware-/Softwareversion (s)",
@@ -191,6 +192,12 @@
       },
       "flow_temp_hc2": {
         "name": "Vorlauftemperatur HK2"
+      },
+      "hc2_setpoint_temp": {
+        "name": "HK2 Solltemperatur"
+      },
+      "hc2_mixer_valve": {
+        "name": "HK2 Mischventil"
       },
       "evaporator_temp": {
         "name": "Verdampfertemperatur"
