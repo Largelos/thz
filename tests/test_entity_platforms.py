@@ -448,3 +448,236 @@ class TestEntityRegistryEnabledDefault:
         assert program_count == 120, (
             f"Expected 120 program schedule entries, found {program_count}"
         )
+
+
+class TestBinarySensorModule:
+    """Test binary_sensor module can be imported and has expected structure."""
+
+    def test_import_binary_sensor_module(self):
+        """Test that binary_sensor module can be imported."""
+        from custom_components.thz import binary_sensor
+        assert binary_sensor is not None
+
+    def test_binary_sensor_has_async_setup_entry(self):
+        """Test that binary_sensor module has async_setup_entry function."""
+        from custom_components.thz.binary_sensor import async_setup_entry
+        assert callable(async_setup_entry)
+
+    def test_binary_sensor_has_entity_class(self):
+        """Test that binary_sensor module has THZBinarySensor class."""
+        from custom_components.thz.binary_sensor import THZBinarySensor
+        assert THZBinarySensor is not None
+
+    def test_is_bit_decode_type(self):
+        """Test the _is_bit_decode_type helper."""
+        from custom_components.thz.binary_sensor import _is_bit_decode_type
+        assert _is_bit_decode_type("bit0") is True
+        assert _is_bit_decode_type("bit3") is True
+        assert _is_bit_decode_type("nbit0") is True
+        assert _is_bit_decode_type("nbit2") is True
+        assert _is_bit_decode_type("hex2int") is False
+        assert _is_bit_decode_type("hex") is False
+        assert _is_bit_decode_type("esp_mant") is False
+
+    def test_get_device_class_compressor(self):
+        """Test device class mapping for compressor-like entities."""
+        from custom_components.thz.binary_sensor import _get_device_class
+        from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+        assert _get_device_class("compressor") == BinarySensorDeviceClass.RUNNING
+
+    def test_get_device_class_pump(self):
+        """Test device class mapping for pump entities."""
+        from custom_components.thz.binary_sensor import _get_device_class
+        from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+        assert _get_device_class("dhwPump") == BinarySensorDeviceClass.RUNNING
+        assert _get_device_class("heatingCircuitPump") == BinarySensorDeviceClass.RUNNING
+
+    def test_get_device_class_filter(self):
+        """Test device class mapping for filter entities."""
+        from custom_components.thz.binary_sensor import _get_device_class
+        from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+        assert _get_device_class("filterBoth") == BinarySensorDeviceClass.PROBLEM
+        assert _get_device_class("filterUp") == BinarySensorDeviceClass.PROBLEM
+        assert _get_device_class("filterDown") == BinarySensorDeviceClass.PROBLEM
+
+    def test_get_device_class_window(self):
+        """Test device class mapping for window sensor."""
+        from custom_components.thz.binary_sensor import _get_device_class
+        from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+        assert _get_device_class("windowOpen") == BinarySensorDeviceClass.WINDOW
+
+    def test_get_device_class_valve(self):
+        """Test device class mapping for valve entities."""
+        from custom_components.thz.binary_sensor import _get_device_class
+        from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+        assert _get_device_class("diverterValve") == BinarySensorDeviceClass.OPENING
+        assert _get_device_class("mixerOpen") == BinarySensorDeviceClass.OPENING
+
+    def test_get_device_class_unknown(self):
+        """Test that unknown entities return None device class."""
+        from custom_components.thz.binary_sensor import _get_device_class
+        assert _get_device_class("somethingUnknown") is None
+
+    def test_binary_sensor_is_on_property(self):
+        """Test THZBinarySensor.is_on returns correct boolean."""
+        from custom_components.thz.binary_sensor import THZBinarySensor
+        from unittest.mock import MagicMock
+
+        coordinator = MagicMock()
+        # payload byte 0x08 = 0b00001000; bit3 = 1
+        coordinator.data = bytes([0x08])
+        entity = THZBinarySensor(
+            coordinator,
+            entry={
+                "name": "compressor",
+                "offset": 0,
+                "length": 1,
+                "decode": "bit3",
+                "icon": "mdi:engine",
+                "translation_key": "compressor",
+            },
+            block=bytes.fromhex("FB"),
+            device_id="test_device",
+        )
+        assert entity.is_on is True
+
+    def test_binary_sensor_is_on_false(self):
+        """Test THZBinarySensor.is_on returns False when bit is 0."""
+        from custom_components.thz.binary_sensor import THZBinarySensor
+        from unittest.mock import MagicMock
+
+        coordinator = MagicMock()
+        coordinator.data = bytes([0x00])
+        entity = THZBinarySensor(
+            coordinator,
+            entry={
+                "name": "compressor",
+                "offset": 0,
+                "length": 1,
+                "decode": "bit3",
+                "icon": None,
+                "translation_key": None,
+            },
+            block=bytes.fromhex("FB"),
+            device_id="test_device",
+        )
+        assert entity.is_on is False
+
+    def test_binary_sensor_is_on_none_when_no_data(self):
+        """Test THZBinarySensor.is_on returns None when coordinator has no data."""
+        from custom_components.thz.binary_sensor import THZBinarySensor
+        from unittest.mock import MagicMock
+
+        coordinator = MagicMock()
+        coordinator.data = None
+        entity = THZBinarySensor(
+            coordinator,
+            entry={
+                "name": "compressor",
+                "offset": 0,
+                "length": 1,
+                "decode": "bit3",
+                "icon": None,
+                "translation_key": None,
+            },
+            block=bytes.fromhex("FB"),
+            device_id="test_device",
+        )
+        assert entity.is_on is None
+
+    def test_binary_sensor_nbit_inverts(self):
+        """Test that nbit decode type inverts the bit."""
+        from custom_components.thz.binary_sensor import THZBinarySensor
+        from unittest.mock import MagicMock
+
+        coordinator = MagicMock()
+        # byte 0x01 = bit0 is 1; nbit0 should invert → False
+        coordinator.data = bytes([0x01])
+        entity = THZBinarySensor(
+            coordinator,
+            entry={
+                "name": "highPressureSensor",
+                "offset": 0,
+                "length": 1,
+                "decode": "nbit0",
+                "icon": None,
+                "translation_key": None,
+            },
+            block=bytes.fromhex("FB"),
+            device_id="test_device",
+        )
+        assert entity.is_on is False
+
+    def test_binary_sensor_unique_id(self):
+        """Test that unique_id is generated correctly."""
+        from custom_components.thz.binary_sensor import THZBinarySensor
+        from unittest.mock import MagicMock
+
+        coordinator = MagicMock()
+        coordinator.data = None
+        entity = THZBinarySensor(
+            coordinator,
+            entry={
+                "name": "testSensor",
+                "offset": 5,
+                "length": 1,
+                "decode": "bit2",
+                "icon": None,
+                "translation_key": None,
+            },
+            block=bytes.fromhex("FB"),
+            device_id="test_device",
+        )
+        assert entity.unique_id == "thz_bin_fb_5_testsensor"
+
+    def test_binary_sensor_device_info(self):
+        """Test that device_info links entity to correct device."""
+        from custom_components.thz.binary_sensor import THZBinarySensor
+        from unittest.mock import MagicMock
+
+        coordinator = MagicMock()
+        coordinator.data = None
+        entity = THZBinarySensor(
+            coordinator,
+            entry={
+                "name": "compressor",
+                "offset": 0,
+                "length": 1,
+                "decode": "bit3",
+                "icon": None,
+                "translation_key": None,
+            },
+            block=bytes.fromhex("FB"),
+            device_id="my_device",
+        )
+        info = entity.device_info
+        assert ("thz", "my_device") in info["identifiers"]
+
+
+class TestButtonModule:
+    """Test button module can be imported and has expected structure."""
+
+    def test_import_button_module(self):
+        """Test that button module can be imported."""
+        from custom_components.thz import button
+        assert button is not None
+
+    def test_button_has_async_setup_entry(self):
+        """Test that button module has async_setup_entry function."""
+        from custom_components.thz.button import async_setup_entry
+        assert callable(async_setup_entry)
+
+    def test_button_has_entity_class(self):
+        """Test that button module has THZButton class."""
+        from custom_components.thz.button import THZButton
+        assert THZButton is not None
+
+    def test_zResetLast10errors_is_button_type(self):
+        """Test that zResetLast10errors write map entry is now type 'button'."""
+        from custom_components.thz.register_maps.write_map_X39tech import WRITE_MAP
+        entry = WRITE_MAP.get("zResetLast10errors")
+        assert entry is not None, "zResetLast10errors entry not found in WRITE_MAP"
+        assert entry["type"] == "button", (
+            f"zResetLast10errors should be type 'button', got '{entry['type']}'"
+        )
+        assert entry["icon"] == "mdi:trash-can-outline"

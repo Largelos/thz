@@ -47,6 +47,7 @@ BLOCK_LABELS: dict[str, str] = {
     "pxxF2":      "Heat Request & Operating Mode",
     "pxxF3":      "DHW Status",
     "pxxF4":      "Heating Circuit Status",
+    "pxxF5":      "Heating Circuit 2 Status",
     "pxxFC":      "Date & Time",
     "pxxFD":      "Firmware Date",
     "pxxFE":      "Hardware/Software Version",

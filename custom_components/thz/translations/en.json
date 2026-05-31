@@ -103,6 +103,7 @@
           "refresh_pxxF2": "Poll interval: Heat Request & Operating Mode (s)",
           "refresh_pxxF3": "Poll interval: DHW Status (s)",
           "refresh_pxxF4": "Poll interval: Heating Circuit Status (s)",
+          "refresh_pxxF5": "Poll interval: Heating Circuit 2 Status (s)",
           "refresh_pxxFC": "Poll interval: Date & Time (s)",
           "refresh_pxxFD": "Poll interval: Firmware Date (s)",
           "refresh_pxxFE": "Poll interval: Hardware/Software Version (s)",
@@ -199,6 +200,12 @@
       },
       "flow_temp_hc2": {
         "name": "Flow Temperature HC2"
+      },
+      "hc2_setpoint_temp": {
+        "name": "HC2 setpoint temperature"
+      },
+      "hc2_mixer_valve": {
+        "name": "HC2 mixer valve"
       },
       "evaporator_temp": {
         "name": "Evaporator Temperature"
@@ -2779,6 +2786,214 @@
       },
       "programfan_mo_so_2_end": {
         "name": "Fan Program All Week 3 End"
+      }
+    },
+    "binary_sensor": {
+      "booster_hc": {
+        "name": "Booster HC"
+      },
+      "booster_stage_1": {
+        "name": "Booster Stage 1"
+      },
+      "booster_stage_2": {
+        "name": "Booster Stage 2"
+      },
+      "booster_stage_3": {
+        "name": "Booster Stage 3"
+      },
+      "compressor": {
+        "name": "Compressor"
+      },
+      "cooling": {
+        "name": "Cooling"
+      },
+      "defrost": {
+        "name": "Defrost"
+      },
+      "dhw_pump": {
+        "name": "DHW Pump"
+      },
+      "diverter_valve": {
+        "name": "Diverter Valve"
+      },
+      "evaporator_ice_monitor": {
+        "name": "Evaporator Ice Monitor"
+      },
+      "evu_release": {
+        "name": "EVU Release"
+      },
+      "filter_both": {
+        "name": "Filter (Both)"
+      },
+      "filter_down": {
+        "name": "Filter (Down)"
+      },
+      "filter_up": {
+        "name": "Filter (Up)"
+      },
+      "heat_pipe_valve": {
+        "name": "Heat Pipe Valve"
+      },
+      "heating_circuit_pump": {
+        "name": "Heating Circuit Pump"
+      },
+      "heating_dhw": {
+        "name": "Heating DHW"
+      },
+      "heating_hc": {
+        "name": "Heating HC"
+      },
+      "high_pressure_sensor": {
+        "name": "High Pressure Sensor"
+      },
+      "low_pressure_sensor": {
+        "name": "Low Pressure Sensor"
+      },
+      "mixer_closed": {
+        "name": "Mixer Closed"
+      },
+      "mixer_open": {
+        "name": "Mixer Open"
+      },
+      "oven_fireplace": {
+        "name": "Oven / Fireplace"
+      },
+      "prog_dhw_friday": {
+        "name": "DHW Program Friday"
+      },
+      "prog_dhw_monday": {
+        "name": "DHW Program Monday"
+      },
+      "prog_dhw_saturday": {
+        "name": "DHW Program Saturday"
+      },
+      "prog_dhw_sunday": {
+        "name": "DHW Program Sunday"
+      },
+      "prog_dhw_thursday": {
+        "name": "DHW Program Thursday"
+      },
+      "prog_dhw_tuesday": {
+        "name": "DHW Program Tuesday"
+      },
+      "prog_dhw_wednesday": {
+        "name": "DHW Program Wednesday"
+      },
+      "prog_fan1_friday": {
+        "name": "Fan 1 Program Friday"
+      },
+      "prog_fan1_monday": {
+        "name": "Fan 1 Program Monday"
+      },
+      "prog_fan1_saturday": {
+        "name": "Fan 1 Program Saturday"
+      },
+      "prog_fan1_sunday": {
+        "name": "Fan 1 Program Sunday"
+      },
+      "prog_fan1_thursday": {
+        "name": "Fan 1 Program Thursday"
+      },
+      "prog_fan1_tuesday": {
+        "name": "Fan 1 Program Tuesday"
+      },
+      "prog_fan1_wednesday": {
+        "name": "Fan 1 Program Wednesday"
+      },
+      "prog_fan2_friday": {
+        "name": "Fan 2 Program Friday"
+      },
+      "prog_fan2_monday": {
+        "name": "Fan 2 Program Monday"
+      },
+      "prog_fan2_saturday": {
+        "name": "Fan 2 Program Saturday"
+      },
+      "prog_fan2_sunday": {
+        "name": "Fan 2 Program Sunday"
+      },
+      "prog_fan2_thursday": {
+        "name": "Fan 2 Program Thursday"
+      },
+      "prog_fan2_tuesday": {
+        "name": "Fan 2 Program Tuesday"
+      },
+      "prog_fan2_wednesday": {
+        "name": "Fan 2 Program Wednesday"
+      },
+      "prog_hc1_friday": {
+        "name": "HC1 Program Friday"
+      },
+      "prog_hc1_monday": {
+        "name": "HC1 Program Monday"
+      },
+      "prog_hc1_saturday": {
+        "name": "HC1 Program Saturday"
+      },
+      "prog_hc1_sunday": {
+        "name": "HC1 Program Sunday"
+      },
+      "prog_hc1_thursday": {
+        "name": "HC1 Program Thursday"
+      },
+      "prog_hc1_tuesday": {
+        "name": "HC1 Program Tuesday"
+      },
+      "prog_hc1_wednesday": {
+        "name": "HC1 Program Wednesday"
+      },
+      "prog_hc2_friday": {
+        "name": "HC2 Program Friday"
+      },
+      "prog_hc2_monday": {
+        "name": "HC2 Program Monday"
+      },
+      "prog_hc2_saturday": {
+        "name": "HC2 Program Saturday"
+      },
+      "prog_hc2_sunday": {
+        "name": "HC2 Program Sunday"
+      },
+      "prog_hc2_thursday": {
+        "name": "HC2 Program Thursday"
+      },
+      "prog_hc2_tuesday": {
+        "name": "HC2 Program Tuesday"
+      },
+      "prog_hc2_wednesday": {
+        "name": "HC2 Program Wednesday"
+      },
+      "pump_hc": {
+        "name": "Pump HC"
+      },
+      "quick_air_vent": {
+        "name": "Quick Air Vent"
+      },
+      "service": {
+        "name": "Service"
+      },
+      "signal_anode": {
+        "name": "Signal Anode"
+      },
+      "solar_pump": {
+        "name": "Solar Pump"
+      },
+      "stb": {
+        "name": "Safety Temperature Limiter (STB)"
+      },
+      "switching_prog": {
+        "name": "Switching Program"
+      },
+      "vent_stage": {
+        "name": "Ventilation Stage"
+      },
+      "window_open": {
+        "name": "Window Open"
+      }
+    },
+    "button": {
+      "z_reset_last10errors": {
+        "name": "Reset Fault Log"
       }
     }
   }

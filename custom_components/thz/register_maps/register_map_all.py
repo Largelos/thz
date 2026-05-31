@@ -38,6 +38,11 @@ _FAN_POWER = {
     "state_class": "measurement",
     "icon": "mdi:fan",
 }
+_MIXER_VALVE = {
+    "unit": "%",
+    "state_class": "measurement",
+    "icon": "mdi:pipe-valve",
+}
 
 REGISTER_MAP = {
     "firmware": "all",
@@ -475,6 +480,10 @@ REGISTER_MAP = {
             1,
             {"icon": "mdi:fire", "translation_key": "hc_booster_stage"},
         ),
+    ],
+    "pxxF5": [
+        ("hc2SetpointTemp:", 16, 4, "hex2int", 10, {**_TEMP, "translation_key": "hc2_setpoint_temp"}),
+        ("hc2MixerValve:", 24, 4, "hex2int", 10, {**_MIXER_VALVE, "translation_key": "hc2_mixer_valve"}),
     ],
     "pxxFC": [
         ("Weekday: ", 5, 1, "weekday", 1, {"translation_key": "weekday"}),

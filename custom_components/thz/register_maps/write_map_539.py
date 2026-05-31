@@ -98,7 +98,7 @@ WRITE_MAP = {
         "device_class": "",
         "icon": "mdi:pump",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
     "p99PumpRateDHW": {
         "command": "0A02CC",
@@ -109,7 +109,7 @@ WRITE_MAP = {
         "device_class": "",
         "icon": "mdi:pump",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
     "p99CoolingHC1Switch": {
         "command": "0B0287",
@@ -130,7 +130,7 @@ WRITE_MAP = {
         "device_class": "temperature",
         "icon": "mdi:thermometer",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
     "p99CoolingHC1HysterFlowTemp": {
         "command": "0B0583",
@@ -141,7 +141,7 @@ WRITE_MAP = {
         "device_class": "",
         "icon": "mdi:thermometer-lines",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
     "p99CoolingHC1HysterRoomTemp": {
         "command": "0B0584",
@@ -152,7 +152,7 @@ WRITE_MAP = {
         "device_class": "",
         "icon": "mdi:thermometer-lines",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
     "p99CoolingHC2Switch": {
         "command": "0C0287",
@@ -173,7 +173,7 @@ WRITE_MAP = {
         "device_class": "temperature",
         "icon": "mdi:thermometer",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
     "p99CoolingHC2HysterFlowTemp": {
         "command": "0C0583",
@@ -184,7 +184,7 @@ WRITE_MAP = {
         "device_class": "",
         "icon": "mdi:thermometer-lines",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
     "p99CoolingHC2HysterRoomTemp": {
         "command": "0C0584",
@@ -195,6 +195,6 @@ WRITE_MAP = {
         "device_class": "",
         "icon": "mdi:thermometer-lines",
         "decode_type": "5temp",
-        "factor": "0.1"
+        "step": 0.1
     },
 }

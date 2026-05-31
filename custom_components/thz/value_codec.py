@@ -70,6 +70,57 @@ def _dec_party_time(raw: bytes, factor: float) -> int | float:
     return int.from_bytes(raw, byteorder="big") / factor
 
 
+def _dec_faultmap(raw: bytes, factor: float) -> str:
+    """Decode a fault code integer to a human-readable fault name.
+
+    The raw bytes are interpreted as a big-endian unsigned integer and looked
+    up in SELECT_MAP['faultmap'].  Matches FHEM: ``$faultmap{(hex($value))}``.
+    Returns the fault name string, or the numeric value as a string when the
+    code is not in the map.
+    """
+    code = int.from_bytes(raw, byteorder="big")
+    return SELECT_MAP.get("faultmap", {}).get(str(code), str(code))
+
+
+def _dec_hex2time(raw: bytes, factor: float) -> str:
+    """Decode a device time value to a "HH:MM" string.
+
+    The raw bytes hold a decimal-encoded time stored as a big-endian unsigned
+    integer: ``value = hours * 100 + minutes``.  This matches FHEM firmware
+    206: ``sprintf("%02u:%02u", hex($value)/100, hex($value)%100)``.
+
+    Example: bytes ``0x04 0xCE`` → 1230 → "12:30".
+    """
+    value = int.from_bytes(raw, byteorder="big")
+    hours = value // 100
+    minutes = value % 100
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def _dec_hex2error(raw: bytes, factor: float) -> str:
+    r"""Decode a 4-byte active-error bitmap to a comma-separated fault list.
+
+    Each bit in the 4-byte (32-bit) value represents one error code.  Bits
+    are enumerated LSB-first within each byte (matching Perl's ``unpack('b32',
+    pack('H*', $value))``).  Bit position N (0-indexed) maps to fault key
+    ``str(N + 1)`` in SELECT_MAP['faultmap'].
+
+    Returns a comma-separated string of active fault names, or ``"n.a."`` when
+    no faults are active.  This matches FHEM: ``bitmap2string(unpack('b32',
+    pack('H*', $value)), \%faultmap)``.
+    """
+    faultmap = SELECT_MAP.get("faultmap", {})
+    active: list[str] = []
+    for byte_idx, byte_val in enumerate(raw):
+        for bit_idx in range(8):  # LSB-first within each byte
+            if byte_val & (1 << bit_idx):
+                fault_key = str(byte_idx * 8 + bit_idx + 1)
+                fault_name = faultmap.get(fault_key)
+                if fault_name and fault_name != "n.a.":
+                    active.append(fault_name)
+    return ", ".join(active) if active else "n.a."
+
+
 # Dispatch table mapping exact decode_type strings to their handler functions.
 # For prefix-based types ("bit*", "nbit*") see decode_raw_value() below.
 # Note: "8party" is the protocol-defined decode_type string used in register maps.
@@ -83,6 +134,9 @@ _DECODE_DISPATCH: dict[str, Callable[[bytes, float], int | float | bool | str]] 
     "weekday": _dec_weekday,
     "opmodehc": _dec_opmodehc,
     "8party": _dec_party_time,
+    "faultmap": _dec_faultmap,
+    "hex2time": _dec_hex2time,
+    "hex2error": _dec_hex2error,
 }
 
 
@@ -106,6 +160,11 @@ def decode_raw_value(
             - "weekday": Map lookup for day of week.
             - "opmodehc": Map lookup for HC operating mode.
             - "8party": Unsigned integer (party time in minutes).
+            - "faultmap": Big-endian unsigned int looked up in faultmap table.
+            - "hex2time": Big-endian 2-byte decimal-encoded time → "HH:MM"
+              (value/100 gives hours, value%100 gives minutes).
+            - "hex2error": 4-byte LSB-first bitmap of active fault codes →
+              comma-separated list of fault names, or "n.a." if none active.
             - Any other: Returns hexadecimal representation.
         factor: The divisor for "hex2int", "hex", and "8party" decoding.
             Defaults to 1.0.

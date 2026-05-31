@@ -83,6 +83,10 @@ async def async_setup_entry(
             # 6th element (if present) is a metadata dict with HA entity attributes
             tuple_meta = entry_tuple[5] if len(entry_tuple) > 5 else {}
 
+            # Skip bit-decoded entries: they are handled by the binary_sensor platform
+            if decode_type.startswith("bit") or decode_type.startswith("nbit"):
+                continue
+
             # Strip whitespace and trailing colons from sensor name
             sensor_name = name.strip().rstrip(':')
 
@@ -155,11 +159,13 @@ def decode_value(
             - "bitX": Extracts bit number X (e.g., "bit3").
             - "nbitX": Negation of bit X (e.g., "nbit2").
             - "esp_mant": Mantissa and exponent representation.
-            - "hexdate": 2-byte unsigned int formatted as "DD.MM"
-              (value/100 . value%100).
-            - "clockdate": 3-byte date (year-offset, month, day) → "YYYY-MM-DD".
+            - "hexdate": 2-byte unsigned int formatted as "DD.MM".
+            - "clockdate": 3-byte date → "YYYY-MM-DD".
             - "somwinmode": Map lookup for summer/winter mode.
             - "weekday": Map lookup for day of week.
+            - "faultmap": Big-endian unsigned int looked up in faultmap table.
+            - "hex2time": Big-endian decimal-encoded time → "HH:MM".
+            - "hex2error": 4-byte LSB-first bitmap → comma-separated fault list.
             - Any other: Returns hexadecimal representation.
         factor: The divisor for "hex2int" and "hex" decoding. Defaults to 1.0.
 
