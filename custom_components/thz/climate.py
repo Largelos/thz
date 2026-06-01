@@ -585,7 +585,7 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
                     bytes.fromhex(entry["command"]),
                     value_bytes,
                 )
-        except (ValueError, TypeError) as err:
+        except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
             _LOGGER.error(
                 "Error writing heat setpoint for %s: %s", self.name, err, exc_info=True
             )
@@ -620,7 +620,7 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
                     value_bytes,
                 )
             self._cooling_target_temp = temperature
-        except (ValueError, TypeError) as err:
+        except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
             _LOGGER.error(
                 "Error writing cool setpoint for %s: %s", self.name, err, exc_info=True
             )
@@ -645,7 +645,7 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
                     bytes.fromhex(self._cool_switch_entry["command"]),
                     THZValueCodec.encode_switch(enabled),
                 )
-        except (ValueError, TypeError) as err:
+        except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
             _LOGGER.error(
                 "Error setting cooling switch for %s: %s", self.name, err, exc_info=True
             )
@@ -676,7 +676,7 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
                     "Cached cooling setpoint for %s: %.1f °C",
                     self.name, self._cooling_target_temp,
                 )
-        except (ValueError, TypeError) as err:
+        except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
             _LOGGER.warning(
                 "Could not read cooling setpoint for %s: %s", self.name, err
             )
