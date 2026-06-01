@@ -178,6 +178,9 @@
       "heating_circuit": {
         "name": "Heating Circuit"
       },
+      "heating_circuit_2": {
+        "name": "Heating Circuit 2"
+      },
       "dhw_heating": {
         "name": "Domestic Hot Water"
       }

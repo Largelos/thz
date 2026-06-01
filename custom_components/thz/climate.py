@@ -10,8 +10,19 @@ entities are created when the required data blocks are available:
   Cooling-active status is read from the ``pxx0A0176`` coordinator
   (``cooling:`` bit).
 
+- **Heating Circuit 2 (HC2)**: reads target temperature from the ``pxxF5``
+  coordinator.  Created only when ``p01RoomTempDayHC2`` is present in the
+  write-register map.  No room-temperature sensor is available for HC2.
+
 - **Domestic Hot Water (DHW)**: reads current / target water temperature from
   the ``pxxF3`` coordinator and supports ``HEAT`` mode only.
+
+All HC entities expose:
+
+- ``hvac_action`` (HEATING / COOLING / IDLE) when ``pxx0A0176`` is available.
+- ``preset_mode`` (comfort / sleep / away) when ``pOpMode`` is writable.
+- HC1 additionally exposes ``fan_mode`` (off / low / medium / high) when
+  ``p07FanStageDay`` is writable.
 
 For firmware versions that do not include writable setpoint commands (e.g.
 older 2.06 maps that omit the ``command`` field) the entity is created in
@@ -26,7 +37,11 @@ from typing import Any
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityFeature,
+    HVACAction,
     HVACMode,
+    PRESET_AWAY,
+    PRESET_COMFORT,
+    PRESET_SLEEP,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PRECISION_TENTHS, UnitOfTemperature
@@ -67,6 +82,14 @@ _F3_DHW_OP_MODE_LEN = 1         # nibble len 2 → 1 byte
 # ("cooling:", 11, 1, "bit3", ...) → nibble 11 (ODD, no shift) → byte 5, bit 3
 _A176_COOLING_BYTE = 5
 _A176_COOLING_BIT = 3
+# ("compressor:", 11, 1, "bit1", ...) → nibble 11 (ODD, no shift) → byte 5, bit 1
+_A176_COMPRESSOR_BIT = 1
+
+# pxxF5 block – Heating Circuit 2 field layout (FHEM F5hc2)
+_F5_HC2_SET_TEMP_OFFSET = 8    # nibble 16 → byte 8  (heatSetTemp)
+_F5_HC2_SET_TEMP_LEN = 2       # nibble len 4 → 2 bytes
+_F5_HC2_OP_MODE_OFFSET = 18    # nibble 36 → byte 18 (hcOpMode)
+_F5_HC2_OP_MODE_LEN = 1        # nibble len 2 → 1 byte
 
 # Write-register name candidates for heat setpoints (tried in order)
 _HC1_HEAT_SETPOINT_NAMES = ["p01RoomTempDayHC1", "p01RoomTempDay"]
@@ -75,6 +98,15 @@ _DHW_SETPOINT_NAMES = ["p04DHWsetDayTemp", "p04DHWsetTempDay"]
 # Write-register names for HC1 cooling (present on devices with active cooling support)
 _HC1_COOL_SWITCH_NAME = "p99CoolingHC1Switch"
 _HC1_COOL_SETPOINT_NAME = "p99CoolingHC1SetTemp"
+
+# Write-register names for HC2
+_HC2_HEAT_SETPOINT_NAMES = ["p01RoomTempDayHC2"]
+_HC2_COOL_SWITCH_NAME = "p99CoolingHC2Switch"
+_HC2_COOL_SETPOINT_NAME = "p99CoolingHC2SetTemp"
+
+# Write-register names for global operating mode and day fan stage
+_OPMODE_NAME = "pOpMode"
+_FAN_STAGE_DAY_NAME = "p07FanStageDay"
 
 # OpModeHC string value → HVACMode
 _OP_MODE_TO_HVAC: dict[str, HVACMode] = {
@@ -87,6 +119,24 @@ _OP_MODE_TO_HVAC: dict[str, HVACMode] = {
 # Default temperature bounds used when no write entry is available
 _DEFAULT_MIN_TEMP = 10.0
 _DEFAULT_MAX_TEMP = 60.0
+
+# Preset mode: HA preset name → pOpMode device option string
+_PRESET_TO_OPMODE: dict[str, str] = {
+    PRESET_COMFORT: "DAYmode",
+    PRESET_SLEEP: "setback",
+    PRESET_AWAY: "standby",
+}
+# hcOpMode device option string → HA preset name
+_HC_OPMODE_TO_PRESET: dict[str, str] = {
+    "normal": PRESET_COMFORT,
+    "setback": PRESET_SLEEP,
+    "standby": PRESET_AWAY,
+}
+
+# Fan stage ↔ HA fan mode names  (stage 0 = off/bypass, 1–3 = low/medium/high)
+_FAN_MODES: list[str] = ["off", "low", "medium", "high"]
+_FAN_MODE_TO_STAGE: dict[str, int] = {m: i for i, m in enumerate(_FAN_MODES)}
+_FAN_STAGE_TO_MODE: dict[int, str] = {i: m for i, m in enumerate(_FAN_MODES)}
 
 
 def _get_step(entry: dict) -> float:
@@ -152,6 +202,12 @@ async def async_setup_entry(
     write_registers: dict = write_manager.get_all_registers()
     entities: list[THZClimate] = []
 
+    # Shared entries used by multiple entities
+    cooling_coord = coordinators.get("pxx0A0176")
+    opmode_entry: dict | None = write_registers.get(_OPMODE_NAME)
+    if not (isinstance(opmode_entry, dict) and opmode_entry.get("command")):
+        opmode_entry = None
+
     # ── Heating Circuit 1 ──────────────────────────────────────────────────
     hc1_coordinator = coordinators.get("pxxF4")
     if hc1_coordinator is not None:
@@ -169,10 +225,14 @@ async def async_setup_entry(
             cool_switch_entry = None
             cool_setpoint_entry = None
 
+        fan_stage_entry: dict | None = write_registers.get(_FAN_STAGE_DAY_NAME)
+        if not (isinstance(fan_stage_entry, dict) and fan_stage_entry.get("command")):
+            fan_stage_entry = None
+
         entities.append(
             THZClimate(
                 coordinator=hc1_coordinator,
-                cooling_coordinator=coordinators.get("pxx0A0176"),
+                cooling_coordinator=cooling_coord,
                 device=device,
                 device_id=device_id,
                 translation_key="heating_circuit",
@@ -185,8 +245,46 @@ async def async_setup_entry(
                 heat_setpoint_entry=heat_entry,
                 cool_switch_entry=cool_switch_entry,
                 cool_setpoint_entry=cool_setpoint_entry,
+                opmode_entry=opmode_entry,
+                fan_stage_entry=fan_stage_entry,
             )
         )
+
+    # ── Heating Circuit 2 ──────────────────────────────────────────────────
+    hc2_coordinator = coordinators.get("pxxF5")
+    if hc2_coordinator is not None:
+        hc2_heat_entry = _find_entry(write_registers, _HC2_HEAT_SETPOINT_NAMES)
+        if hc2_heat_entry is not None:
+            hc2_cool_switch_entry = write_registers.get(_HC2_COOL_SWITCH_NAME)
+            hc2_cool_setpoint_entry = write_registers.get(_HC2_COOL_SETPOINT_NAME)
+            if not (
+                isinstance(hc2_cool_switch_entry, dict)
+                and hc2_cool_switch_entry.get("command")
+                and isinstance(hc2_cool_setpoint_entry, dict)
+                and hc2_cool_setpoint_entry.get("command")
+            ):
+                hc2_cool_switch_entry = None
+                hc2_cool_setpoint_entry = None
+
+            entities.append(
+                THZClimate(
+                    coordinator=hc2_coordinator,
+                    cooling_coordinator=cooling_coord,
+                    device=device,
+                    device_id=device_id,
+                    translation_key="heating_circuit_2",
+                    current_temp_offset=None,
+                    current_temp_length=None,
+                    target_temp_offset=_F5_HC2_SET_TEMP_OFFSET,
+                    target_temp_length=_F5_HC2_SET_TEMP_LEN,
+                    op_mode_offset=_F5_HC2_OP_MODE_OFFSET,
+                    op_mode_length=_F5_HC2_OP_MODE_LEN,
+                    heat_setpoint_entry=hc2_heat_entry,
+                    cool_switch_entry=hc2_cool_switch_entry,
+                    cool_setpoint_entry=hc2_cool_setpoint_entry,
+                    opmode_entry=opmode_entry,
+                )
+            )
 
     # ── Domestic Hot Water ─────────────────────────────────────────────────
     dhw_coordinator = coordinators.get("pxxF3")
@@ -241,6 +339,29 @@ def _read_temp(data: bytes, offset: int, length: int) -> float | None:
     return None
 
 
+def _read_op_mode_raw(data: bytes, offset: int, length: int) -> str | None:
+    """Return the raw OpModeHC string from coordinator data.
+
+    Args:
+        data: Raw bytes from the coordinator.
+        offset: Byte offset of the opmode field.
+        length: Byte length of the opmode field.
+
+    Returns:
+        Raw mode string (e.g. ``"normal"``, ``"setback"``), or ``None``.
+    """
+    if len(data) < offset + length:
+        return None
+    try:
+        raw = data[offset:offset + length]
+        mode_str = decode_raw_value(raw, "opmodehc", 1.0)
+        if isinstance(mode_str, str):
+            return mode_str
+    except (ValueError, IndexError, TypeError):
+        pass
+    return None
+
+
 def _read_op_mode(data: bytes, offset: int, length: int) -> HVACMode:
     """Decode the OpModeHC value and map it to an HVACMode.
 
@@ -252,15 +373,9 @@ def _read_op_mode(data: bytes, offset: int, length: int) -> HVACMode:
     Returns:
         The corresponding :class:`HVACMode`, defaulting to ``HEAT``.
     """
-    if len(data) < offset + length:
-        return HVACMode.HEAT
-    try:
-        raw = data[offset:offset + length]
-        mode_str = decode_raw_value(raw, "opmodehc", 1.0)
-        if isinstance(mode_str, str):
-            return _OP_MODE_TO_HVAC.get(mode_str, HVACMode.HEAT)
-    except (ValueError, IndexError, TypeError):
-        pass
+    mode_str = _read_op_mode_raw(data, offset, length)
+    if mode_str is not None:
+        return _OP_MODE_TO_HVAC.get(mode_str, HVACMode.HEAT)
     return HVACMode.HEAT
 
 
@@ -276,6 +391,22 @@ def _cooling_active(data: bytes) -> bool:
     if len(data) <= _A176_COOLING_BYTE:
         return False
     return bool((data[_A176_COOLING_BYTE] >> _A176_COOLING_BIT) & 0x01)
+
+
+def _bit_active(data: bytes, byte_idx: int, bit_idx: int) -> bool:
+    """Return whether a specific bit is set in ``data``.
+
+    Args:
+        data: Raw bytes to test.
+        byte_idx: The byte index to check.
+        bit_idx: The bit number within the byte (0 = LSB).
+
+    Returns:
+        ``True`` if the bit is set.
+    """
+    if len(data) <= byte_idx:
+        return False
+    return bool((data[byte_idx] >> bit_idx) & 0x01)
 
 
 class THZClimate(CoordinatorEntity, ClimateEntity):
@@ -295,6 +426,11 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
             or ``None`` when cooling is not available.
         _cooling_target_temp: Cached cooling setpoint in °C (populated on
             first update when cooling is supported).
+        _opmode_entry: Write-register entry for the global operating-mode
+            register (``pOpMode``), or ``None`` when not available.
+        _fan_stage_entry: Write-register entry for the day fan-stage register
+            (``p07FanStageDay``), or ``None`` when not available.
+        _fan_stage_cache: Last known fan stage (0–3), populated on startup.
     """
 
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
@@ -308,8 +444,8 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
         device: Any,
         device_id: str,
         translation_key: str,
-        current_temp_offset: int,
-        current_temp_length: int,
+        current_temp_offset: int | None,
+        current_temp_length: int | None,
         target_temp_offset: int,
         target_temp_length: int,
         op_mode_offset: int,
@@ -317,6 +453,8 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
         heat_setpoint_entry: dict | None,
         cool_switch_entry: dict | None,
         cool_setpoint_entry: dict | None,
+        opmode_entry: dict | None = None,
+        fan_stage_entry: dict | None = None,
     ) -> None:
         """Initialise a THZ climate entity.
 
@@ -336,6 +474,10 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
             heat_setpoint_entry: Write-register metadata for heat setpoint.
             cool_switch_entry: Write-register metadata for cooling switch.
             cool_setpoint_entry: Write-register metadata for cooling setpoint.
+            opmode_entry: Write-register metadata for the global operating-mode
+                register (``pOpMode``).  Enables preset mode when provided.
+            fan_stage_entry: Write-register metadata for the day fan-stage
+                register (``p07FanStageDay``).  Enables fan mode when provided.
         """
         super().__init__(coordinator)
 
@@ -356,6 +498,11 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
 
         # Cached cooling setpoint (populated on first device read)
         self._cooling_target_temp: float | None = None
+
+        # Optional write entries for preset mode and fan mode
+        self._opmode_entry = opmode_entry
+        self._fan_stage_entry = fan_stage_entry
+        self._fan_stage_cache: int | None = None
 
         self._attr_translation_key = translation_key
 
@@ -379,6 +526,14 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
             self._attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
         else:
             self._attr_supported_features = ClimateEntityFeature(0)
+
+        if opmode_entry is not None:
+            self._attr_supported_features |= ClimateEntityFeature.PRESET_MODE
+            self._attr_preset_modes = [PRESET_COMFORT, PRESET_SLEEP, PRESET_AWAY]
+
+        if fan_stage_entry is not None:
+            self._attr_supported_features |= ClimateEntityFeature.FAN_MODE
+            self._attr_fan_modes = list(_FAN_MODES)
 
         # Temperature bounds from heat setpoint entry
         if heat_setpoint_entry is not None:
@@ -410,6 +565,10 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
         if self._supports_cooling:
             await self._async_read_cooling_setpoint()
 
+        # Populate the fan stage cache on startup
+        if self._fan_stage_entry is not None:
+            await self._async_read_fan_stage()
+
     @callback
     def _handle_cooling_coordinator_update(self) -> None:
         """Trigger a state refresh when the cooling-status coordinator updates."""
@@ -440,6 +599,8 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
         Returns:
             Temperature in °C, or ``None`` if unavailable.
         """
+        if self._current_temp_offset is None:
+            return None
         if self.coordinator.data is None:
             return None
         return _read_temp(
@@ -497,6 +658,67 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
             self._op_mode_length,
         )
 
+    @property
+    def hvac_action(self) -> HVACAction | None:
+        """Return the current HVAC action.
+
+        Reads the compressor and cooling bits from the ``pxx0A0176``
+        coordinator:
+
+        - Cooling bit set → ``COOLING``
+        - Compressor bit set → ``HEATING``
+        - Otherwise → ``IDLE``
+
+        Returns:
+            Current :class:`HVACAction`, or ``None`` if status is unavailable.
+        """
+        if self._cooling_coordinator is None:
+            return None
+        cool_data = self._cooling_coordinator.data
+        if cool_data is None:
+            return None
+        if self._supports_cooling and _cooling_active(cool_data):
+            return HVACAction.COOLING
+        if _bit_active(cool_data, _A176_COOLING_BYTE, _A176_COMPRESSOR_BIT):
+            return HVACAction.HEATING
+        return HVACAction.IDLE
+
+    @property
+    def preset_mode(self) -> str | None:
+        """Return the current preset mode.
+
+        Maps the HC op-mode from coordinator data to a HA preset name:
+        ``normal`` → ``comfort``, ``setback`` → ``sleep``,
+        ``standby`` → ``away``.
+
+        Returns:
+            Current preset name, or ``None`` if unavailable or unsupported.
+        """
+        if self._opmode_entry is None:
+            return None
+        if self.coordinator.data is None:
+            return None
+        op_str = _read_op_mode_raw(
+            self.coordinator.data, self._op_mode_offset, self._op_mode_length
+        )
+        return _HC_OPMODE_TO_PRESET.get(op_str or "", None)
+
+    @property
+    def fan_mode(self) -> str | None:
+        """Return the current fan mode.
+
+        Returns the fan mode string corresponding to the last known day fan
+        stage (0 = off, 1 = low, 2 = medium, 3 = high).
+
+        Returns:
+            Fan mode string, or ``None`` if unsupported or unknown.
+        """
+        if self._fan_stage_entry is None:
+            return None
+        if self._fan_stage_cache is None:
+            return None
+        return _FAN_STAGE_TO_MODE.get(self._fan_stage_cache)
+
     # ── ClimateEntity service calls ─────────────────────────────────────────
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
@@ -538,8 +760,10 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
                 )
                 return
             await self._async_set_cooling_switch(enabled=True)
-            # Refresh cached cooling setpoint after enabling
-            await self._async_read_cooling_setpoint()
+            # Request a coordinator refresh so the cooling-active bit in
+            # pxx0A0176 is re-polled and hvac_mode reflects the new state.
+            if self._cooling_coordinator is not None:
+                await self._cooling_coordinator.async_request_refresh()
             self.async_write_ha_state()
 
         elif hvac_mode in (HVACMode.HEAT, HVACMode.OFF):
@@ -553,6 +777,79 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
                     self.name,
                 )
             self.async_write_ha_state()
+
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set the preset operating mode.
+
+        Writes the global ``pOpMode`` register with the device value that
+        corresponds to the requested HA preset:
+
+        - ``comfort`` → ``DAYmode`` (full heat / day schedule)
+        - ``sleep``   → ``setback`` (reduced setback temperature)
+        - ``away``    → ``standby`` (minimal / standby mode)
+
+        Args:
+            preset_mode: One of ``comfort``, ``sleep``, or ``away``.
+        """
+        if self._opmode_entry is None:
+            return
+        opmode_str = _PRESET_TO_OPMODE.get(preset_mode)
+        if opmode_str is None:
+            _LOGGER.warning(
+                "Unknown preset mode '%s' for %s", preset_mode, self.name
+            )
+            return
+        try:
+            value_bytes = THZValueCodec.encode_select(opmode_str, "2opmode")
+            async with self._device.lock:
+                await self.hass.async_add_executor_job(
+                    self._device.write_value,
+                    bytes.fromhex(self._opmode_entry["command"]),
+                    value_bytes,
+                )
+            await self.coordinator.async_request_refresh()
+        except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
+            _LOGGER.error(
+                "Error setting preset mode for %s: %s", self.name, err, exc_info=True
+            )
+
+    async def async_set_fan_mode(self, fan_mode: str) -> None:
+        """Set the day ventilation fan stage.
+
+        Writes the ``p07FanStageDay`` register with the stage number that
+        corresponds to the requested fan mode:
+
+        - ``off``    → stage 0 (bypass / minimum)
+        - ``low``    → stage 1
+        - ``medium`` → stage 2
+        - ``high``   → stage 3
+
+        Args:
+            fan_mode: One of ``off``, ``low``, ``medium``, or ``high``.
+        """
+        if self._fan_stage_entry is None:
+            return
+        stage = _FAN_MODE_TO_STAGE.get(fan_mode)
+        if stage is None:
+            _LOGGER.warning("Unknown fan mode '%s' for %s", fan_mode, self.name)
+            return
+        entry = self._fan_stage_entry
+        step = _get_step(entry)
+        decode_type = entry.get("decode_type", "1clean")
+        try:
+            value_bytes = THZValueCodec.encode_number(float(stage), step, decode_type)
+            async with self._device.lock:
+                await self.hass.async_add_executor_job(
+                    self._device.write_value,
+                    bytes.fromhex(entry["command"]),
+                    value_bytes,
+                )
+            self._fan_stage_cache = stage
+            self.async_write_ha_state()
+        except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
+            _LOGGER.error(
+                "Error setting fan mode for %s: %s", self.name, err, exc_info=True
+            )
 
     # ── Private write helpers ───────────────────────────────────────────────
 
@@ -679,6 +976,33 @@ class THZClimate(CoordinatorEntity, ClimateEntity):
         except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
             _LOGGER.warning(
                 "Could not read cooling setpoint for %s: %s", self.name, err
+            )
+
+    async def _async_read_fan_stage(self) -> None:
+        """Read and cache the current day fan stage from the device."""
+        if self._fan_stage_entry is None:
+            return
+        entry = self._fan_stage_entry
+        step = _get_step(entry)
+        decode_type = entry.get("decode_type", "1clean")
+        try:
+            async with self._device.lock:
+                value_bytes = await self.hass.async_add_executor_job(
+                    self._device.read_value,
+                    bytes.fromhex(entry["command"]),
+                    "get",
+                    WRITE_REGISTER_OFFSET,
+                    WRITE_REGISTER_LENGTH,
+                )
+            if value_bytes:
+                raw = THZValueCodec.decode_number(value_bytes, step, decode_type)
+                self._fan_stage_cache = int(raw)
+                _LOGGER.debug(
+                    "Cached fan stage for %s: %d", self.name, self._fan_stage_cache
+                )
+        except (ValueError, TypeError, RuntimeError, ConnectionError, OSError) as err:
+            _LOGGER.warning(
+                "Could not read fan stage for %s: %s", self.name, err
             )
 
     # ── Device registry ─────────────────────────────────────────────────────
