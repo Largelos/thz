@@ -124,6 +124,7 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
                 )
 
             self._is_on = True
+            self.async_write_ha_state()  # Optimistically update UI; next poll confirms
         except (ValueError, TypeError) as err:
             _LOGGER.error(
                 "Error encoding switch %s to turn on: %s",
@@ -146,6 +147,7 @@ class THZSwitch(THZBaseEntity, SwitchEntity):
                 )
 
             self._is_on = False
+            self.async_write_ha_state()  # Optimistically update UI; next poll confirms
         except (ValueError, TypeError) as err:
             _LOGGER.error(
                 "Error encoding switch %s to turn off: %s",

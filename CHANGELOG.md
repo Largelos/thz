@@ -4,6 +4,41 @@ All notable changes to the THZ integration are documented here.
 
 ---
 
+## [Unreleased]
+
+### New Features
+
+- **Compressor/booster start counters restored** (firmware 4.39 / 5.39): Added back the
+  `sHistory` (command `09`) sensors that were present in earlier FHEM-based versions —
+  `compressor_starts_heating`, `compressor_starts_cooling`, `compressor_starts_dhw`,
+  `booster_starts_dhw`, and `booster_starts_heating`.
+
+### Bug Fixes
+
+- **Switches and selects revert in the UI after a few seconds**: Toggling a switch or
+  changing a select option updated the internal state but never pushed it to Home
+  Assistant (`async_write_ha_state()` was missing), so the UI fell back to the stale
+  value until the next poll. The same issue affected number and time entities. All of
+  these now write the new state immediately for instant UI feedback.
+
+- **Passive cooling select value always reads as "Unknown"** (#122): Fixed a byte-order
+  encoding bug where the `passive_cooling` select type was decoded as big-endian
+  (returning value 256 instead of 1). Now uses the same single-byte encoding as
+  `2opmode`, matching the actual device protocol.
+
+- **HA 2026.05 hang / serial reconnect on protocol error** (#118): A `RuntimeError`
+  from a stale TCP socket (e.g. ser2net) previously raised immediately without
+  attempting to reconnect. The integration now tries to reconnect and retry on
+  `RuntimeError` the same way it does for `ConnectionError`.
+
+- **Ventilator speed sensors show Hz instead of %** (#106): All ventilator speed sensors
+  (`outputVentilatorSpeed`, `inputVentilatorSpeed`, `mainVentilatorSpeed`) now correctly
+  report their unit as `%` to match the FHEM source. The `device_class: frequency` has
+  been removed. ⚠️ **Breaking change for users with long-term statistics on these
+  sensors** — HA may require manually migrating or clearing the old statistics.
+
+---
+
 ## [0.3.0-alpha] – 2026-03-02
 
 > **Alpha release** — tested on firmware 4.39 and 5.39. Please report any regressions

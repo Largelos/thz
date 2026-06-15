@@ -550,6 +550,21 @@
       "compressor_restart_delay": {
         "name": "Kompressor Wiederanlaufverzögerung"
       },
+      "compressor_starts_cooling": {
+        "name": "Verdichterstarts (Kühlung)"
+      },
+      "compressor_starts_dhw": {
+        "name": "Verdichterstarts (Warmwasser)"
+      },
+      "compressor_starts_heating": {
+        "name": "Verdichterstarts (Heizung)"
+      },
+      "booster_starts_dhw": {
+        "name": "Heizstabstarts (Warmwasser)"
+      },
+      "booster_starts_heating": {
+        "name": "Heizstabstarts (Heizung)"
+      },
       "cooling_hours": {
         "name": "Kühlstunden"
       },

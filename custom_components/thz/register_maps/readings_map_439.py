@@ -27,6 +27,7 @@ _ENERGY_TOTAL = {
     "device_class": "energy",
     "state_class": "total_increasing",
 }
+_STARTS = {"icon": "mdi:counter", "state_class": "total_increasing"}
 
 # Paired register blocks: maps cmd2 block key to cmd3 block key.
 # The coordinator reads both registers and combines them:
@@ -170,6 +171,14 @@ REGISTER_MAP = {
             1,
             {**_ENERGY_TOTAL, "translation_key": "electr_hc_total"},
         ),
+    ],
+    # Compressor/booster start counters ("sHistory", command 09)
+    "pxx09": [
+        ("compressorHeating:", 4, 4, "hex", 1, {**_STARTS, "translation_key": "compressor_starts_heating"}),
+        (" compressorCooling:", 8, 4, "hex", 1, {**_STARTS, "translation_key": "compressor_starts_cooling"}),
+        (" compressorDHW:", 12, 4, "hex", 1, {**_STARTS, "translation_key": "compressor_starts_dhw"}),
+        (" boosterDHW:", 16, 4, "hex", 1, {**_STARTS, "translation_key": "booster_starts_dhw"}),
+        (" boosterHeating:", 20, 4, "hex", 1, {**_STARTS, "translation_key": "booster_starts_heating"}),
     ],
     "pxx0A05D1": [
         (

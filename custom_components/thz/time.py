@@ -297,6 +297,7 @@ class THZTime(THZBaseEntity, TimeEntity):
             )
 
         self._attr_native_value = t_value
+        self.async_write_ha_state()  # Optimistically update UI; next poll confirms
 
 
 
@@ -449,3 +450,4 @@ class THZScheduleTime(THZBaseEntity, TimeEntity):
             )
 
         self._attr_native_value = t_value
+        self.async_write_ha_state()  # Optimistically update UI; next poll confirms

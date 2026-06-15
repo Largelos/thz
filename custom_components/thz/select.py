@@ -148,6 +148,7 @@ class THZSelect(THZBaseEntity, SelectEntity):
                 )
 
             self._attr_current_option = option
+            self.async_write_ha_state()  # Optimistically update UI; next poll confirms
         except Exception as err:  # noqa: BLE001
             _LOGGER.error(
                 "Error setting select %s to option %s: %s",

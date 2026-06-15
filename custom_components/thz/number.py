@@ -137,6 +137,7 @@ class THZNumber(THZBaseEntity, NumberEntity):
                 )
 
             self._attr_native_value = value
+            self.async_write_ha_state()  # Optimistically update UI; next poll confirms
         except (ValueError, TypeError) as err:
             _LOGGER.error(
                 "Error encoding number %s value %s: %s",

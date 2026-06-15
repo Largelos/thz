@@ -554,6 +554,21 @@
       "compressor_restart_delay": {
         "name": "Compressor Restart Delay"
       },
+      "compressor_starts_cooling": {
+        "name": "Compressor Starts (Cooling)"
+      },
+      "compressor_starts_dhw": {
+        "name": "Compressor Starts (DHW)"
+      },
+      "compressor_starts_heating": {
+        "name": "Compressor Starts (Heating)"
+      },
+      "booster_starts_dhw": {
+        "name": "Booster Starts (DHW)"
+      },
+      "booster_starts_heating": {
+        "name": "Booster Starts (Heating)"
+      },
       "cooling_hours": {
         "name": "Cooling Hours"
       },
