@@ -74,7 +74,8 @@
           "refresh_pxx0A09D3": "Abfrageintervall: Feuchtigkeitssollwert Max (s)",
           "refresh_pxx0A0648": "Abfrageintervall: Kühlung Heizkreis gesamt (s)",
           "refresh_pxx0B0264": "Abfrageintervall: Taupunkt HK1 (s)",
-          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)"
+          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)",
+          "refresh_pxx0C0011": "Abfrageintervall: Innentemperatur Kontrolleinheit HK2 (s)"
         }
       },
       "setup_ip": {
@@ -154,7 +155,8 @@
           "refresh_pxx0A09D3": "Abfrageintervall: Feuchtigkeitssollwert Max (s)",
           "refresh_pxx0A0648": "Abfrageintervall: Kühlung Heizkreis gesamt (s)",
           "refresh_pxx0B0264": "Abfrageintervall: Taupunkt HK1 (s)",
-          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)"
+          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)",
+          "refresh_pxx0C0011": "Abfrageintervall: Innentemperatur Kontrolleinheit HK2 (s)"
         },
         "data_description": {
           "write_interval": "Wie oft beschreibbare Entitäten ihren Status synchronisieren (5-86400 Sekunden)"
@@ -366,6 +368,9 @@
       },
       "inside_temp_rc": {
         "name": "Innentemperatur Kontrolleinheit"
+      },
+      "inside_temp_rc_hc2": {
+        "name": "Innentemperatur Kontrolleinheit HK2"
       },
       "season_mode": {
         "name": "Jahreszeitenmodus"

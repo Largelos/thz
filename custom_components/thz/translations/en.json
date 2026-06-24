@@ -73,7 +73,8 @@
           "refresh_pxx0A09D3": "Poll interval: Humidity Setpoint Max (s)",
           "refresh_pxx0A0648": "Poll interval: Cooling HC Total (s)",
           "refresh_pxx0B0264": "Poll interval: Dew Point HC1 (s)",
-          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)"
+          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)",
+          "refresh_pxx0C0011": "Poll interval: Inside temperature HC2 (Room controller) (s)"
         }
       },
       "setup_ip": {
@@ -154,7 +155,8 @@
           "refresh_pxx0A09D3": "Poll interval: Humidity Setpoint Max (s)",
           "refresh_pxx0A0648": "Poll interval: Cooling HC Total (s)",
           "refresh_pxx0B0264": "Poll interval: Dew Point HC1 (s)",
-          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)"
+          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)",
+          "refresh_pxx0C0011": "Poll interval: Inside temperature HC2 (Room controller) (s)"
         },
         "data_description": {
           "write_interval": "How often writable entities sync their state (5-86400 seconds)"
@@ -369,6 +371,9 @@
       },
       "inside_temp_rc": {
         "name": "Inside Temperature (Room Controller)"
+      },
+      "inside_temp_rc_hc2": {
+        "name": "Inside Temperature HC2 (Room Controller)"
       },
       "season_mode": {
         "name": "Season Mode"
