@@ -319,6 +319,9 @@
       "rel_humidity": {
         "name": "Relative Luftfeuchtigkeit"
       },
+      "rel_humidity_hc2": {
+        "name": "Relative Luftfeuchtigkeit HK2"
+      },
       "dew_point": {
         "name": "Taupunkt"
       },

@@ -330,6 +330,9 @@
       "rel_humidity": {
         "name": "Relative Humidity"
       },
+      "rel_humidity_hc2": {
+        "name": "Relative Humidity HC2"
+      },
       "dew_point": {
         "name": "Dew Point"
       },
