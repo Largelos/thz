@@ -107,12 +107,14 @@ Use the `thz.scan_raw_registers` service to scan multiple raw registers in one r
 - Optional fields:
    - `entry_id`: required when multiple THZ devices are configured
    - `include_errors`: include failed commands in `results`
+   - `decode_values`: include best-effort decoded values in `results.decoded`
    - `max_results`: limit amount of scanned commands
 
 Service response contains:
 
 - `summary`: mode, scanned count, success/error counters
-- `results`: list of commands with `command`, `length`, `hex`, formatted hex dump (`formatted`), and best-effort auto-decoded candidates (`decoded`) for successful reads
+- `results`: list of commands with `command`, `length`, `hex`, formatted hex dump (`formatted`)
+- when `decode_values: true`, each successful result also contains `decoded` with best-effort candidates decoded from payload bytes (not from checksum/echo header bytes)
 
 Example service call:
 

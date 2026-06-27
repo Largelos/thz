@@ -59,6 +59,13 @@ scan_raw_registers:
       default: false
       selector:
         boolean:
+    decode_values:
+      name: Decode values
+      description: Try to decode payload values and include decoded candidates in results.
+      required: false
+      default: false
+      selector:
+        boolean:
     max_results:
       name: Max results
       description: Maximum number of commands to scan.
