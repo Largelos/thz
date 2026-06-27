@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import itertools
 import logging
 
 import voluptuous as vol
@@ -25,6 +26,75 @@ _LOGGER = logging.getLogger(__name__)
 
 # Hex dump formatting constants
 BYTES_PER_HEX_LINE = 16  # Number of bytes to display per line in hex dumps
+
+
+def _resolve_target_device(
+    hass: HomeAssistant, requested_entry_id: str | None
+) -> THZDevice | None:
+    """Resolve target THZ device from service call context.
+
+    Returns None when target resolution fails.
+    """
+    available_entries: dict[str, dict] = {
+        eid: ed
+        for eid, ed in hass.data.get(DOMAIN, {}).items()
+        if isinstance(ed, dict) and "device" in ed
+    }
+
+    if requested_entry_id:
+        entry_data_for_cmd = available_entries.get(requested_entry_id)
+        if entry_data_for_cmd is None:
+            return None
+        return entry_data_for_cmd["device"]
+
+    if len(available_entries) > 1:
+        return None
+
+    if available_entries:
+        return next(iter(available_entries.values()))["device"]
+
+    return None
+
+
+def _expand_scan_pattern(pattern: str) -> list[str]:
+    """Expand a hex pattern containing X wildcards into commands.
+
+    Example: "0A0XXX" -> ["0A0000", ..., "0A0FFF"]
+    """
+    normalized = pattern.strip().upper()
+    if len(normalized) != 6:
+        raise ValueError("Pattern must be exactly 6 characters")
+
+    parts: list[list[str]] = []
+    for ch in normalized:
+        if ch == "X":
+            parts.append(list("0123456789ABCDEF"))
+            continue
+        if ch not in "0123456789ABCDEF":
+            raise ValueError(f"Invalid pattern character: {ch}")
+        parts.append([ch])
+
+    return ["".join(chars) for chars in itertools.product(*parts)]
+
+
+def _expand_scan_range(start: str, end: str) -> list[str]:
+    """Expand inclusive hex range to list of 6-char commands."""
+    start_norm = start.strip().upper()
+    end_norm = end.strip().upper()
+
+    if len(start_norm) != 6 or len(end_norm) != 6:
+        raise ValueError("start and end must be exactly 6 hex characters")
+
+    try:
+        start_val = int(start_norm, 16)
+        end_val = int(end_norm, 16)
+    except ValueError as err:
+        raise ValueError("start/end must be valid hex") from err
+
+    if start_val > end_val:
+        raise ValueError("start must be less than or equal to end")
+
+    return [f"{value:06X}" for value in range(start_val, end_val + 1)]
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -225,16 +295,14 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
 
         # Locate the target device.  With a single entry no entry_id is needed.
         # With multiple entries, entry_id is required — return an error if omitted.
-        available_entries: dict[str, dict] = {
-            eid: ed
-            for eid, ed in hass.data.get(DOMAIN, {}).items()
-            if isinstance(ed, dict) and "device" in ed
-        }
-
-        device = None
-        if requested_entry_id:
-            entry_data_for_cmd = available_entries.get(requested_entry_id)
-            if entry_data_for_cmd is None:
+        device = _resolve_target_device(hass, requested_entry_id)
+        if device is None:
+            available_entries: dict[str, dict] = {
+                eid: ed
+                for eid, ed in hass.data.get(DOMAIN, {}).items()
+                if isinstance(ed, dict) and "device" in ed
+            }
+            if requested_entry_id and requested_entry_id not in available_entries:
                 error_msg = (
                     f"No THZ entry found for entry_id '{requested_entry_id}'"
                 )
@@ -254,12 +322,13 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                     "error": error_msg,
                     "command": command_str,
                 }
-            device = entry_data_for_cmd["device"]
-        elif len(available_entries) > 1:
-            error_msg = (
-                "Multiple THZ config entries found. "
-                "Provide 'entry_id' to target a specific device."
-            )
+            if len(available_entries) > 1 and not requested_entry_id:
+                error_msg = (
+                    "Multiple THZ config entries found. "
+                    "Provide 'entry_id' to target a specific device."
+                )
+            else:
+                error_msg = "THZ device not initialized"
             _LOGGER.error(error_msg)
             await hass.services.async_call(
                 "persistent_notification",
@@ -276,26 +345,123 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "error": error_msg,
                 "command": command_str,
             }
-        elif available_entries:
-            device = next(iter(available_entries.values()))["device"]
-        if not device:
-            error_msg = "THZ device not initialized"
-            _LOGGER.error(error_msg)
-            await hass.services.async_call(
-                "persistent_notification",
-                "create",
-                {
-                    "title": "THZ Raw Register Read Error",
-                    "message": error_msg,
-                    "notification_id": f"thz_raw_{command_str}",
-                },
-                blocking=True,
-            )
+
+    async def _async_handle_scan_raw_registers(call: ServiceCall) -> ServiceResponse:
+        """Handle the scan_raw_registers service call."""
+        requested_entry_id: str | None = call.data.get("entry_id")
+        pattern: str | None = call.data.get("pattern")
+        start: str | None = call.data.get("start")
+        end: str | None = call.data.get("end")
+        include_errors = bool(call.data.get("include_errors", False))
+        max_results = int(call.data.get("max_results", 65535))
+
+        if max_results <= 0:
             return {
                 "success": False,
-                "error": error_msg,
-                "command": command_str,
+                "error": "max_results must be greater than 0",
             }
+
+        use_pattern = bool(pattern)
+        use_range = bool(start) or bool(end)
+        if use_pattern == use_range:
+            return {
+                "success": False,
+                "error": "Provide either 'pattern' or both 'start' and 'end'",
+            }
+
+        try:
+            if use_pattern:
+                commands = _expand_scan_pattern(pattern or "")
+                scan_mode = f"pattern:{(pattern or '').strip().upper()}"
+            else:
+                if not start or not end:
+                    raise ValueError("Both 'start' and 'end' are required")
+                commands = _expand_scan_range(start, end)
+                scan_mode = f"range:{start.strip().upper()}-{end.strip().upper()}"
+        except ValueError as err:
+            return {
+                "success": False,
+                "error": str(err),
+            }
+
+        if len(commands) > max_results:
+            commands = commands[:max_results]
+
+        device = _resolve_target_device(hass, requested_entry_id)
+        if device is None:
+            available_entries: dict[str, dict] = {
+                eid: ed
+                for eid, ed in hass.data.get(DOMAIN, {}).items()
+                if isinstance(ed, dict) and "device" in ed
+            }
+            if requested_entry_id and requested_entry_id not in available_entries:
+                return {
+                    "success": False,
+                    "error": f"No THZ entry found for entry_id '{requested_entry_id}'",
+                }
+            if len(available_entries) > 1 and not requested_entry_id:
+                return {
+                    "success": False,
+                    "error": (
+                        "Multiple THZ config entries found. "
+                        "Provide 'entry_id' to target a specific device."
+                    ),
+                }
+            return {
+                "success": False,
+                "error": "THZ device not initialized",
+            }
+
+        results: list[dict[str, str | int | bool]] = []
+        success_count = 0
+        error_count = 0
+
+        for command_str in commands:
+            command_bytes = bytes.fromhex(command_str)
+            try:
+                async with device.lock:
+                    data = await hass.async_add_executor_job(
+                        device.read_block, command_bytes, "get"
+                    )
+                success_count += 1
+                results.append(
+                    {
+                        "command": command_str,
+                        "success": True,
+                        "length": len(data),
+                        "hex": data.hex(),
+                    }
+                )
+            except Exception as err:  # noqa: BLE001
+                error_count += 1
+                if include_errors:
+                    results.append(
+                        {
+                            "command": command_str,
+                            "success": False,
+                            "error": str(err),
+                        }
+                    )
+
+        _LOGGER.info(
+            "Raw register scan done (%s): scanned=%d, success=%d, errors=%d",
+            scan_mode,
+            len(commands),
+            success_count,
+            error_count,
+        )
+
+        return {
+            "success": True,
+            "summary": {
+                "mode": scan_mode,
+                "scanned": len(commands),
+                "success_count": success_count,
+                "error_count": error_count,
+                "include_errors": include_errors,
+            },
+            "results": results,
+        }
 
         # Read the register with device lock
         try:
@@ -379,6 +545,25 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             vol.Required("command"): cv.string,
             vol.Optional("entry_id"): cv.string,
         }),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        "scan_raw_registers",
+        _async_handle_scan_raw_registers,
+        schema=vol.Schema(
+            {
+                vol.Exclusive("pattern", "scan_input"): cv.string,
+                vol.Inclusive("start", "scan_range"): cv.string,
+                vol.Inclusive("end", "scan_range"): cv.string,
+                vol.Optional("entry_id"): cv.string,
+                vol.Optional("include_errors", default=False): cv.boolean,
+                vol.Optional("max_results", default=65535): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=65535)
+                ),
+            }
+        ),
         supports_response=SupportsResponse.OPTIONAL,
     )
     _LOGGER.info("THZ services registered")
