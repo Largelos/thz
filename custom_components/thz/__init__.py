@@ -97,6 +97,16 @@ def _expand_scan_range(start: str, end: str) -> list[str]:
     return [f"{value:06X}" for value in range(start_val, end_val + 1)]
 
 
+def _format_hex_dump(data: bytes) -> str:
+    """Format bytes as an offset-based hex dump string."""
+    formatted_lines = []
+    for i in range(0, len(data), BYTES_PER_HEX_LINE):
+        chunk = data[i : i + BYTES_PER_HEX_LINE]
+        hex_str = " ".join(f"{b:02x}" for b in chunk)
+        formatted_lines.append(f"  {i:04x}: {hex_str}")
+    return "\n".join(formatted_lines)
+
+
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up THZ from config entry."""
     log_level_str = config_entry.data.get("log_level", "info")
@@ -292,6 +302,72 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "command": command_str,
             }
 
+        # Read the register with device lock
+        try:
+            _LOGGER.info("Reading raw register: %s", command_str)
+            async with device.lock:
+                data = await hass.async_add_executor_job(
+                    device.read_block, command_bytes, "get"
+                )
+
+            formatted = _format_hex_dump(data)
+            hex_string = data.hex()
+
+            # Log the result
+            _LOGGER.info(
+                "Raw register %s read successfully (%d bytes):\n%s",
+                command_str,
+                len(data),
+                formatted,
+            )
+
+            # Create persistent notification with the result
+            notification_message = (
+                f"Command: {command_str}\n"
+                f"Length: {len(data)} bytes\n"
+                f"Hex: {hex_string}\n\n"
+                f"Formatted:\n{formatted}"
+            )
+
+            await hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": f"THZ Raw Register Read: {command_str}",
+                    "message": notification_message,
+                    "notification_id": f"thz_raw_{command_str}",
+                },
+                blocking=True,
+            )
+
+            # Return service response
+            return {
+                "success": True,
+                "command": command_str,
+                "length": len(data),
+                "hex": hex_string,
+                "formatted": formatted,
+            }
+
+        except Exception as err:  # noqa: BLE001
+            error_msg = f"Error reading register {command_str}: {err}"
+            _LOGGER.error(error_msg, exc_info=True)
+            await hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": "THZ Raw Register Read Error",
+                    "message": error_msg,
+                    "notification_id": f"thz_raw_{command_str}",
+                },
+                blocking=True,
+            )
+            return {
+                "success": False,
+                "error": str(err),
+                "command": command_str,
+            }
+
         # Locate the target device.  With a single entry no entry_id is needed.
         # With multiple entries, entry_id is required — return an error if omitted.
         device = _resolve_target_device(hass, requested_entry_id)
@@ -429,6 +505,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                         "success": True,
                         "length": len(data),
                         "hex": data.hex(),
+                        "formatted": _format_hex_dump(data),
                     }
                 )
             except Exception as err:  # noqa: BLE001
@@ -450,7 +527,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             error_count,
         )
 
-        return {
+        response = {
             "success": True,
             "summary": {
                 "mode": scan_mode,
@@ -462,78 +539,36 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
             "results": results,
         }
 
-        # Read the register with device lock
-        try:
-            _LOGGER.info("Reading raw register: %s", command_str)
-            async with device.lock:
-                data = await hass.async_add_executor_job(
-                    device.read_block, command_bytes, "get"
+        preview_lines = [
+            f"Mode: {scan_mode}",
+            f"Scanned: {len(commands)}",
+            f"Success: {success_count}",
+            f"Errors: {error_count}",
+        ]
+        for item in results[:20]:
+            if item.get("success"):
+                preview_lines.append(
+                    f"{item['command']} ({item['length']} B): {item['hex']}"
                 )
+            else:
+                preview_lines.append(
+                    f"{item['command']} ERROR: {item.get('error', 'unknown error')}"
+                )
+        if len(results) > 20:
+            preview_lines.append(f"... and {len(results) - 20} more")
 
-            # Format the hex dump with offsets (BYTES_PER_HEX_LINE bytes per line)
-            formatted_lines = []
-            for i in range(0, len(data), BYTES_PER_HEX_LINE):
-                chunk = data[i : i + BYTES_PER_HEX_LINE]
-                hex_str = " ".join(f"{b:02x}" for b in chunk)
-                formatted_lines.append(f"  {i:04x}: {hex_str}")
-            formatted = "\n".join(formatted_lines)
+        await hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "title": f"THZ Raw Register Scan ({scan_mode})",
+                "message": "\n".join(preview_lines),
+                "notification_id": f"thz_scan_{scan_mode.replace(':', '_')}",
+            },
+            blocking=True,
+        )
 
-            hex_string = data.hex()
-
-            # Log the result
-            _LOGGER.info(
-                "Raw register %s read successfully (%d bytes):\n%s",
-                command_str,
-                len(data),
-                formatted
-            )
-
-            # Create persistent notification with the result
-            notification_message = (
-                f"Command: {command_str}\n"
-                f"Length: {len(data)} bytes\n"
-                f"Hex: {hex_string}\n\n"
-                f"Formatted:\n{formatted}"
-            )
-
-            await hass.services.async_call(
-                "persistent_notification",
-                "create",
-                {
-                    "title": f"THZ Raw Register Read: {command_str}",
-                    "message": notification_message,
-                    "notification_id": f"thz_raw_{command_str}",
-                },
-                blocking=True,
-            )
-
-            # Return service response
-            return {
-                "success": True,
-                "command": command_str,
-                "length": len(data),
-                "hex": hex_string,
-                "formatted": formatted,
-            }
-
-        except Exception as err:  # noqa: BLE001
-            error_msg = f"Error reading register {command_str}: {err}"
-            _LOGGER.error(error_msg, exc_info=True)
-            await hass.services.async_call(
-                "persistent_notification",
-                "create",
-                {
-                    "title": "THZ Raw Register Read Error",
-                    "message": error_msg,
-                    "notification_id": f"thz_raw_{command_str}",
-                },
-                blocking=True,
-            )
-            return {
-                "success": False,
-                "error": str(err),
-                "command": command_str,
-            }
+        return response
 
     # Register the service
     hass.services.async_register(
@@ -727,6 +762,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not remaining_entries:
             _LOGGER.debug("Removing THZ services (last config entry)")
             hass.services.async_remove(DOMAIN, "read_raw_register")
+            hass.services.async_remove(DOMAIN, "scan_raw_registers")
 
     return unload_ok
 
