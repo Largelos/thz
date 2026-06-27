@@ -21,6 +21,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import DEFAULT_UPDATE_INTERVAL, DOMAIN, should_hide_entity_by_default
 from .thz_device import THZDevice
+from .value_codec import decode_raw_value
+from .value_maps import SELECT_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,6 +107,81 @@ def _format_hex_dump(data: bytes) -> str:
         hex_str = " ".join(f"{b:02x}" for b in chunk)
         formatted_lines.append(f"  {i:04x}: {hex_str}")
     return "\n".join(formatted_lines)
+
+
+def _guess_decode_candidates(data: bytes) -> dict[str, int | float | bool | str]:
+    """Best-effort decode candidates for raw payload bytes."""
+    candidates: dict[str, int | float | bool | str] = {
+        "raw_hex": data.hex(),
+        "raw_len": len(data),
+    }
+
+    if not data:
+        return candidates
+
+    try:
+        candidates["u8"] = int.from_bytes(data[:1], byteorder="big", signed=False)
+        candidates["s8"] = int.from_bytes(data[:1], byteorder="big", signed=True)
+        candidates["bit0"] = bool(data[0] & 0x01)
+    except Exception:  # noqa: BLE001
+        pass
+
+    if len(data) >= 2:
+        two = data[:2]
+        try:
+            candidates["u16"] = int.from_bytes(two, byteorder="big", signed=False)
+            candidates["s16"] = int.from_bytes(two, byteorder="big", signed=True)
+            candidates["hex"] = decode_raw_value(two, "hex")
+            candidates["hex2int"] = decode_raw_value(two, "hex2int")
+        except Exception:  # noqa: BLE001
+            pass
+
+    if len(data) >= 4:
+        four = data[:4]
+        try:
+            candidates["u32"] = int.from_bytes(
+                four, byteorder="big", signed=False
+            )
+            candidates["s32"] = int.from_bytes(
+                four, byteorder="big", signed=True
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    # Generic boolean hint used by many THZ switch-like values
+    try:
+        candidates["bool_nonzero"] = bool(
+            int.from_bytes(data[: min(2, len(data))], byteorder="big", signed=False)
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Try known select maps against common value widths
+    map_hits: dict[str, str] = {}
+    try:
+        width_values: dict[str, int] = {"u8": int.from_bytes(data[:1], "big")}
+        if len(data) >= 2:
+            width_values["u16"] = int.from_bytes(data[:2], "big")
+
+        for map_name, mapping in SELECT_MAP.items():
+            for value in width_values.values():
+                key_plain = str(value)
+                key_padded2 = str(value).zfill(2)
+                if key_plain in mapping:
+                    map_hits[map_name] = mapping[key_plain]
+                    break
+                if key_padded2 in mapping:
+                    map_hits[map_name] = mapping[key_padded2]
+                    break
+    except Exception:  # noqa: BLE001
+        pass
+
+    if map_hits:
+        candidates["select_candidates"] = ", ".join(
+            f"{name}={value}" for name, value in sorted(map_hits.items())
+        )
+
+    return candidates
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -506,6 +583,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                         "length": len(data),
                         "hex": data.hex(),
                         "formatted": _format_hex_dump(data),
+                        "decoded": _guess_decode_candidates(data),
                     }
                 )
             except Exception as err:  # noqa: BLE001

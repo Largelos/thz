@@ -112,7 +112,7 @@ Use the `thz.scan_raw_registers` service to scan multiple raw registers in one r
 Service response contains:
 
 - `summary`: mode, scanned count, success/error counters
-- `results`: list of commands with `command`, `length`, `hex`, and formatted hex dump (`formatted`) for successful reads
+- `results`: list of commands with `command`, `length`, `hex`, formatted hex dump (`formatted`), and best-effort auto-decoded candidates (`decoded`) for successful reads
 
 Example service call:
 
