@@ -506,6 +506,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
         start: str | None = call.data.get("start")
         end: str | None = call.data.get("end")
         include_errors = bool(call.data.get("include_errors", False))
+        decode_values = bool(call.data.get("decode_values", False))
         max_results = int(call.data.get("max_results", 65535))
 
         if max_results <= 0:
@@ -577,16 +578,18 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                         device.read_block, command_bytes, "get"
                     )
                 success_count += 1
-                results.append(
-                    {
-                        "command": command_str,
-                        "success": True,
-                        "length": len(data),
-                        "hex": data.hex(),
-                        "formatted": _format_hex_dump(data),
-                        "decoded": _guess_decode_candidates(data),
-                    }
-                )
+                result_item: dict[str, str | int | bool | dict[str, int | float | bool | str]] = {
+                    "command": command_str,
+                    "success": True,
+                    "length": len(data),
+                    "hex": data.hex(),
+                    "formatted": _format_hex_dump(data),
+                }
+                if decode_values:
+                    payload = data[4:] if len(data) > 4 else b""
+                    result_item["decoded"] = _guess_decode_candidates(payload)
+
+                results.append(result_item)
             except Exception as err:  # noqa: BLE001
                 error_count += 1
                 if include_errors:
@@ -614,6 +617,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "success_count": success_count,
                 "error_count": error_count,
                 "include_errors": include_errors,
+                "decode_values": decode_values,
             },
             "results": results,
         }
@@ -672,6 +676,7 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 vol.Inclusive("end", "scan_range"): cv.string,
                 vol.Optional("entry_id"): cv.string,
                 vol.Optional("include_errors", default=False): cv.boolean,
+                vol.Optional("decode_values", default=False): cv.boolean,
                 vol.Optional("max_results", default=65535): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=65535)
                 ),
