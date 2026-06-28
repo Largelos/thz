@@ -76,6 +76,13 @@ async def async_setup_entry(
             )
             continue
 
+        if block in unsupported_blocks:
+            _LOGGER.debug(
+                "Block %s is unsupported on this firmware, skipping entity creation",
+                block,
+            )
+            continue
+
         block_hex = block.removeprefix("pxx")  # Remove "pxx" prefix
         block_bytes = bytes.fromhex(block_hex)
         for entry_tuple in entries:
