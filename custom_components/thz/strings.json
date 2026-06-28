@@ -557,20 +557,20 @@
       "compressor_restart_delay": {
         "name": "Compressor Restart Delay"
       },
-      "compressor_starts_cooling": {
-        "name": "Compressor Starts (Cooling)"
+      "compressor_runtime_cooling": {
+        "name": "Compressor Runtime (Cooling)"
       },
-      "compressor_starts_dhw": {
-        "name": "Compressor Starts (DHW)"
+      "compressor_runtime_dhw": {
+        "name": "Compressor Runtime (DHW)"
       },
-      "compressor_starts_heating": {
-        "name": "Compressor Starts (Heating)"
+      "compressor_runtime_heating": {
+        "name": "Compressor Runtime (Heating)"
       },
-      "booster_starts_dhw": {
-        "name": "Booster Starts (DHW)"
+      "booster_runtime_dhw": {
+        "name": "Booster Runtime (DHW)"
       },
-      "booster_starts_heating": {
-        "name": "Booster Starts (Heating)"
+      "booster_runtime_heating": {
+        "name": "Booster Runtime (Heating)"
       },
       "cooling_hours": {
         "name": "Cooling Hours"

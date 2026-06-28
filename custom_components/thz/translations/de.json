@@ -553,20 +553,20 @@
       "compressor_restart_delay": {
         "name": "Kompressor Wiederanlaufverzögerung"
       },
-      "compressor_starts_cooling": {
-        "name": "Verdichterstarts (Kühlung)"
+      "compressor_runtime_cooling": {
+        "name": "Laufzeit Verdichter (Kühlung)"
       },
-      "compressor_starts_dhw": {
-        "name": "Verdichterstarts (Warmwasser)"
+      "compressor_runtime_dhw": {
+        "name": "Laufzeit Verdichter (Warmwasser)"
       },
-      "compressor_starts_heating": {
-        "name": "Verdichterstarts (Heizung)"
+      "compressor_runtime_heating": {
+        "name": "Laufzeit Verdichter (Heizung)"
       },
-      "booster_starts_dhw": {
-        "name": "Heizstabstarts (Warmwasser)"
+      "booster_runtime_dhw": {
+        "name": "Laufzeit Heizstab (Warmwasser)"
       },
-      "booster_starts_heating": {
-        "name": "Heizstabstarts (Heizung)"
+      "booster_runtime_heating": {
+        "name": "Laufzeit Heizstab (Heizung)"
       },
       "cooling_hours": {
         "name": "Kühlstunden"
