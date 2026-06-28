@@ -197,12 +197,9 @@ async def async_setup_entry(
     entry_data = hass.data[DOMAIN][config_entry.entry_id]
     coordinators: dict[str, DataUpdateCoordinator] = entry_data["coordinators"]
     device = entry_data["device"]
-
-    # write_manager, register_manager and device_id are stored at domain level
-    domain_data = hass.data[DOMAIN]
-    write_registers: dict = domain_data["write_manager"].get_all_registers()
-    register_manager = domain_data["register_manager"]
-    device_id: str = domain_data["device_id"]
+    device_id: str = entry_data["device_id"]
+    write_registers: dict = entry_data["write_manager"].get_all_registers()
+    register_manager = entry_data["register_manager"]
 
     # Derive field byte-offsets and lengths from the active firmware's register map.
     # Returns None when a field is absent; the entity is skipped in that case.
