@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 import logging
 
@@ -18,7 +19,13 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_UPDATE_INTERVAL, DOMAIN, should_hide_entity_by_default
+from .const import (
+    DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
+    WRITE_REGISTER_LENGTH,
+    WRITE_REGISTER_OFFSET,
+    should_hide_entity_by_default,
+)
 from .thz_device import THZDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -172,6 +179,86 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     await _async_setup_services(hass)
 
     return True
+
+
+# ---------------------------------------------------------------------------
+# 3-way diverter valve motor control
+# Commands address the motor controller directly; the heat pump firmware does
+# NOT auto-stop — the caller must send "off" once the valve has moved.
+# ---------------------------------------------------------------------------
+_VALVE_MOTOR_HEATING  = bytes.fromhex("0A0653")  # motor direction: heating circuit
+_VALVE_MOTOR_DHW      = bytes.fromhex("0A0652")  # motor direction: DHW (warm water)
+_VALVE_MOTOR_ON       = bytes.fromhex("0001")     # engage motor
+_VALVE_MOTOR_OFF      = bytes.fromhex("0000")     # stop motor
+
+# Safety source: diverterValve bit in pxxF2 block (nibble 23 → byte 11, bit 2).
+# Bit = 1 means the heat pump has switched flow to DHW → physically safe to move
+# the valve toward DHW.  Bit = 0 means heating circuit is active → refuse.
+_DIVERTER_BLOCK = "pxxF2"
+_DIVERTER_BYTE  = 11   # nibble 23 // 2
+_DIVERTER_BIT   = 2    # from decode_type "bit2"
+
+
+def _normalize_block_name(block: str) -> str:
+    """Normalise a block name to the coordinator key format ``pxxXX``.
+
+    Accepts any of: ``"FB"``, ``"fb"``, ``"pxxFB"``, ``"0xFB"``, ``"0A0176"``.
+    Always returns lowercase ``pxx`` prefix with upper-cased hex suffix.
+    """
+    b = block.strip()
+    if b.lower().startswith("0x"):
+        b = b[2:]
+    if b.lower().startswith("pxx"):
+        b = b[3:]
+    return f"pxx{b.upper()}"
+
+
+async def async_refresh_block(
+    hass: HomeAssistant,
+    block: str,
+    entry_id: str | None = None,
+) -> bool:
+    """Force-refresh a specific block coordinator from the device.
+
+    Triggers an immediate re-read of the named block and pushes updates to all
+    entities that subscribe to that coordinator.
+
+    Args:
+        hass: The Home Assistant instance.
+        block: Block name in any accepted form (``"FB"``, ``"pxxFB"``, etc.).
+        entry_id: Config entry ID.  Required only when multiple THZ entries exist.
+
+    Returns:
+        ``True`` if at least one coordinator was refreshed, ``False`` otherwise.
+    """
+    normalized = _normalize_block_name(block)
+
+    available_entries: dict[str, dict] = {
+        eid: ed
+        for eid, ed in hass.data.get(DOMAIN, {}).items()
+        if isinstance(ed, dict) and "coordinators" in ed
+    }
+
+    if entry_id:
+        entry_data = available_entries.get(entry_id)
+        if entry_data is None:
+            _LOGGER.error("async_refresh_block: no THZ entry for entry_id '%s'", entry_id)
+            return False
+        candidates = [entry_data]
+    else:
+        candidates = list(available_entries.values())
+
+    found = False
+    for entry_data in candidates:
+        coordinator = entry_data["coordinators"].get(normalized)
+        if coordinator is not None:
+            await coordinator.async_request_refresh()
+            _LOGGER.debug("Refreshed coordinator for block %s", normalized)
+            found = True
+
+    if not found:
+        _LOGGER.warning("async_refresh_block: block '%s' not found in any coordinator", normalized)
+    return found
 
 
 async def _async_setup_services(hass: HomeAssistant) -> None:
@@ -370,13 +457,180 @@ async def _async_setup_services(hass: HomeAssistant) -> None:
                 "command": command_str,
             }
 
-    # Register the service
+    async def _async_handle_refresh_block(call: ServiceCall) -> ServiceResponse:
+        """Handle the refresh_block service call."""
+        block = call.data.get("block", "").strip()
+        requested_entry_id: str | None = call.data.get("entry_id")
+
+        if not block:
+            return {"success": False, "error": "block parameter is required"}
+
+        normalized = _normalize_block_name(block)
+        found = await async_refresh_block(hass, block, requested_entry_id)
+
+        if found:
+            _LOGGER.info("Service refresh_block: refreshed %s", normalized)
+            return {"success": True, "block": normalized}
+
+        error_msg = f"Block '{normalized}' not found in any active coordinator"
+        _LOGGER.warning(error_msg)
+        return {"success": False, "error": error_msg, "block": normalized}
+
+    async def _async_handle_set_diverter_valve(call: ServiceCall) -> ServiceResponse:
+        """Handle the set_diverter_valve service call.
+
+        Moves the 3-way diverter valve motor toward the requested position.
+        The motor does NOT auto-stop; send position="off" once the valve has moved.
+
+        For the "dhw" position the diverterValve bit in pxxF2 is checked first:
+        the heat pump must already be directing flow to DHW, otherwise the command
+        is refused to prevent DHW water from running through the heating circuit.
+        """
+        position: str = call.data["position"]
+        requested_entry_id: str | None = call.data.get("entry_id")
+
+        # Locate entry (same pattern as other services)
+        available_entries: dict[str, dict] = {
+            eid: ed
+            for eid, ed in hass.data.get(DOMAIN, {}).items()
+            if isinstance(ed, dict) and "device" in ed
+        }
+
+        if requested_entry_id:
+            entry_data = available_entries.get(requested_entry_id)
+            if entry_data is None:
+                return {"success": False, "error": f"No THZ entry for entry_id '{requested_entry_id}'"}
+        elif len(available_entries) > 1:
+            return {
+                "success": False,
+                "error": "Multiple THZ entries found. Provide 'entry_id' to target a specific device.",
+            }
+        elif available_entries:
+            entry_data = next(iter(available_entries.values()))
+        else:
+            return {"success": False, "error": "THZ device not initialised"}
+
+        # Safety guard: no valve movement in the wrong direction under pressure.
+        # diverterValve bit = 1 → flow is to DHW; bit = 0 → flow is to heating circuit.
+        # Moving the valve against the active flow direction is refused.
+        if position in ("dhw", "heating"):
+            coordinator = entry_data.get("coordinators", {}).get(_DIVERTER_BLOCK)
+            if coordinator is None or coordinator.data is None:
+                return {
+                    "success": False,
+                    "error": f"Cannot verify valve state: {_DIVERTER_BLOCK} coordinator data not available",
+                }
+            data: bytes = coordinator.data
+            if len(data) <= _DIVERTER_BYTE:
+                return {"success": False, "error": f"Insufficient data from {_DIVERTER_BLOCK} block"}
+            diverter_active = bool((data[_DIVERTER_BYTE] >> _DIVERTER_BIT) & 0x01)
+            if position == "dhw" and not diverter_active:
+                return {
+                    "success": False,
+                    "error": (
+                        "Heat pump is not in DHW mode (diverterValve bit = 0 in pxxF2). "
+                        "Moving valve to DHW refused — heating circuit is under pressure."
+                    ),
+                }
+            if position == "heating" and diverter_active:
+                return {
+                    "success": False,
+                    "error": (
+                        "Heat pump is in DHW mode (diverterValve bit = 1 in pxxF2). "
+                        "Moving valve to heating refused — DHW circuit is under pressure."
+                    ),
+                }
+
+        device: THZDevice = entry_data["device"]
+
+        async def _stop_and_verify() -> bool:
+            """Stop both motor directions, read back to confirm, retry once if not zero."""
+            async with device.lock:
+                await hass.async_add_executor_job(
+                    device.write_value, _VALVE_MOTOR_HEATING, _VALVE_MOTOR_OFF
+                )
+                await hass.async_add_executor_job(
+                    device.write_value, _VALVE_MOTOR_DHW, _VALVE_MOTOR_OFF
+                )
+                h_state = await hass.async_add_executor_job(
+                    device.read_value, _VALVE_MOTOR_HEATING, "get",
+                    WRITE_REGISTER_OFFSET, WRITE_REGISTER_LENGTH,
+                )
+                d_state = await hass.async_add_executor_job(
+                    device.read_value, _VALVE_MOTOR_DHW, "get",
+                    WRITE_REGISTER_OFFSET, WRITE_REGISTER_LENGTH,
+                )
+
+            if h_state != _VALVE_MOTOR_OFF or d_state != _VALVE_MOTOR_OFF:
+                _LOGGER.warning(
+                    "Diverter valve motor not confirmed off (heating=%s dhw=%s), retrying stop",
+                    h_state.hex(), d_state.hex(),
+                )
+                async with device.lock:
+                    await hass.async_add_executor_job(
+                        device.write_value, _VALVE_MOTOR_HEATING, _VALVE_MOTOR_OFF
+                    )
+                    await hass.async_add_executor_job(
+                        device.write_value, _VALVE_MOTOR_DHW, _VALVE_MOTOR_OFF
+                    )
+                return False
+
+            return True
+
+        try:
+            # Send the motor ON command
+            async with device.lock:
+                if position == "heating":
+                    await hass.async_add_executor_job(
+                        device.write_value, _VALVE_MOTOR_HEATING, _VALVE_MOTOR_ON
+                    )
+                elif position == "dhw":
+                    await hass.async_add_executor_job(
+                        device.write_value, _VALVE_MOTOR_DHW, _VALVE_MOTOR_ON
+                    )
+
+            # Auto-stop after 3 seconds (lock released during wait so coordinators can poll)
+            if position in ("heating", "dhw"):
+                await asyncio.sleep(3)
+
+            # Stop and verify — runs for explicit "off" too
+            confirmed = await _stop_and_verify()
+
+        except (RuntimeError, ConnectionError, OSError) as err:
+            error_msg = f"Error sending diverter valve command: {err}"
+            _LOGGER.error(error_msg)
+            return {"success": False, "error": error_msg}
+
+        _LOGGER.info("Diverter valve command sent: position=%s confirmed_off=%s", position, confirmed)
+        return {"success": True, "position": position, "confirmed_off": confirmed}
+
+    # Register services
     hass.services.async_register(
         DOMAIN,
         "read_raw_register",
         _async_handle_read_raw_register,
         schema=vol.Schema({
             vol.Required("command"): cv.string,
+            vol.Optional("entry_id"): cv.string,
+        }),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "refresh_block",
+        _async_handle_refresh_block,
+        schema=vol.Schema({
+            vol.Required("block"): cv.string,
+            vol.Optional("entry_id"): cv.string,
+        }),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "set_diverter_valve",
+        _async_handle_set_diverter_valve,
+        schema=vol.Schema({
+            vol.Required("position"): vol.In(["heating", "dhw", "off"]),
             vol.Optional("entry_id"): cv.string,
         }),
         supports_response=SupportsResponse.OPTIONAL,
@@ -543,6 +797,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not remaining_entries:
             _LOGGER.debug("Removing THZ services (last config entry)")
             hass.services.async_remove(DOMAIN, "read_raw_register")
+            hass.services.async_remove(DOMAIN, "refresh_block")
+            hass.services.async_remove(DOMAIN, "set_diverter_valve")
 
     return unload_ok
 
