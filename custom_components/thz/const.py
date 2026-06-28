@@ -104,6 +104,7 @@ BLOCK_LABELS: dict[str, str] = {
     "pxx0A0648":  "Cooling HC Total",
     "pxx0B0264":  "Dew Point HC1",
     "pxx0C0264":  "Dew Point HC2",
+    "pxx0C0011":  "Room temperature HC2",
 }
 
 

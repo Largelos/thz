@@ -6,12 +6,82 @@ All notable changes to the THZ integration are documented here.
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] – 2026-06-28
+
 ### New Features
 
-- **Compressor/booster start counters restored** (firmware 4.39 / 5.39): Added back the
-  `sHistory` (command `09`) sensors that were present in earlier FHEM-based versions —
-  `compressor_starts_heating`, `compressor_starts_cooling`, `compressor_starts_dhw`,
-  `booster_starts_dhw`, and `booster_starts_heating`.
+- **Compressor/booster runtime hours** (firmware 4.39 / 5.39): Added `sHistory`
+  (command `09`) sensors reporting cumulative operating hours in `h` —
+  `compressor_runtime_heating`, `compressor_runtime_cooling`, `compressor_runtime_dhw`,
+  `booster_runtime_dhw`, and `booster_runtime_heating`.
+  ⚠️ **Breaking change for users who already have these sensors**: entity names and
+  unique IDs have changed from `*_starts_*` to `*_runtime_*`. Existing history,
+  automations, or dashboards referencing the old names will need to be updated.
+
+- **Climate entity — Heating Circuit 2 (HC2)**: A second `climate` entity is now created
+  for HC2 when `p01RoomTempDayHC2` is present in the write-register map. It reads the
+  setpoint and operating mode from the `pxxF5` coordinator.
+
+- **`thz.refresh_block` service**: Force an immediate re-read of any coordinator block
+  from the device without waiting for the next poll interval. Accepts the block name in
+  any form (`"FB"`, `"pxxFB"`, `"0xFB"`). Returns `{success, block}`. Also available as
+  `async_refresh_block(hass, block, entry_id)` for use by other platforms.
+
+- **`thz.set_diverter_valve` service**: Manual control of the 3-way diverter valve motor.
+  Accepts `position: heating | dhw | off`.
+  - Both `heating` and `dhw` are guarded by the `diverterValve` bit in `pxxF2` — the
+    command is refused if the heat pump is currently pressurising the opposite circuit,
+    preventing valve movement against live flow.
+  - After activating the motor the service waits 3 seconds then automatically stops it
+    (sends `00 00` to both motor commands).
+  - The stop is verified by reading back both registers; if either is non-zero the stop
+    is retried once and a warning is logged.
+  - `off` stops the motor immediately with the same read-back verification.
+  - Returns `{success, position, confirmed_off}`.
+
+### Improvements
+
+- **Climate field layouts derived from the register map**: Byte offsets and lengths for
+  all climate readings (`roomSetTemp`, `insideTempRC`, `hcOpMode`, `dhwTemp`, etc.) are
+  now looked up from the active firmware's merged register map at startup instead of
+  being hardcoded. This automatically picks up firmware-specific offsets. If a required
+  field is absent the entity is skipped with an error log rather than using a stale
+  hardcoded value.
+
+- **Climate writes trigger an immediate coordinator refresh**: Setting temperature, HVAC
+  mode, preset, or fan mode now requests a coordinator refresh immediately after the
+  write so HA reflects the actual device value without waiting for the next poll.
+
+### Bug Fixes
+
+- **Relative Humidity HC2 mapped as Dew Point** (PR #127): The sensor at nibble 82 in
+  the `pxxFB` block was incorrectly labelled `dewPoint` with temperature metadata. It
+  carries relative humidity for HC2 (room controller). Renamed to `relHumidityHC2` with
+  humidity metadata and `rel_humidity_hc2` translation key (EN + DE).
+
+- **Switches and selects revert in the UI after a few seconds**: Toggling a switch or
+  changing a select option updated the internal state but never pushed it to Home
+  Assistant (`async_write_ha_state()` was missing), so the UI fell back to the stale
+  value until the next poll. The same issue affected number and time entities. All of
+  these now write the new state immediately for instant UI feedback.
+
+- **Passive cooling select value always reads as "Unknown"** (#122): Fixed a byte-order
+  encoding bug where the `passive_cooling` select type was decoded as big-endian
+  (returning value 256 instead of 1). Now uses the same single-byte encoding as
+  `2opmode`, matching the actual device protocol.
+
+- **HA 2026.05 hang / serial reconnect on protocol error** (#118): A `RuntimeError`
+  from a stale TCP socket (e.g. ser2net) previously raised immediately without
+  attempting to reconnect. The integration now tries to reconnect and retry on
+  `RuntimeError` the same way it does for `ConnectionError`.
+
+- **Ventilator speed sensors show Hz instead of %** (#106): All ventilator speed sensors
+  (`outputVentilatorSpeed`, `inputVentilatorSpeed`, `mainVentilatorSpeed`) now correctly
+  report their unit as `%` to match the FHEM source. The `device_class: frequency` has
+  been removed. ⚠️ **Breaking change for users with long-term statistics on these
+  sensors** — HA may require manually migrating or clearing the old statistics.
 
 ### Bug Fixes
 

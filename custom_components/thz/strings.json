@@ -73,7 +73,8 @@
           "refresh_pxx0A09D3": "Poll interval: Humidity Setpoint Max (s)",
           "refresh_pxx0A0648": "Poll interval: Cooling HC Total (s)",
           "refresh_pxx0B0264": "Poll interval: Dew Point HC1 (s)",
-          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)"
+          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)",
+          "refresh_pxx0C0011": "Poll interval: Inside temperature HC2 (Room controller) (s)"
         }
       },
       "setup_ip": {
@@ -153,7 +154,8 @@
           "refresh_pxx0A09D3": "Poll interval: Humidity Setpoint Max (s)",
           "refresh_pxx0A0648": "Poll interval: Cooling HC Total (s)",
           "refresh_pxx0B0264": "Poll interval: Dew Point HC1 (s)",
-          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)"
+          "refresh_pxx0C0264": "Poll interval: Dew Point HC2 (s)",
+          "refresh_pxx0C0011": "Poll interval: Inside temperature HC2 (Room controller) (s)"
         },
         "data_description": {
           "write_interval": "How often writable entities sync their state (5-86400 seconds)"
@@ -322,6 +324,9 @@
       },
       "rel_humidity": {
         "name": "Relative Humidity"
+      },
+      "rel_humidity_hc2": {
+        "name": "Relative Humidity HC2"
       },
       "dew_point": {
         "name": "Dew Point"
@@ -554,20 +559,20 @@
       "compressor_restart_delay": {
         "name": "Compressor Restart Delay"
       },
-      "compressor_starts_cooling": {
-        "name": "Compressor Starts (Cooling)"
+      "compressor_runtime_cooling": {
+        "name": "Compressor Runtime (Cooling)"
       },
-      "compressor_starts_dhw": {
-        "name": "Compressor Starts (DHW)"
+      "compressor_runtime_dhw": {
+        "name": "Compressor Runtime (DHW)"
       },
-      "compressor_starts_heating": {
-        "name": "Compressor Starts (Heating)"
+      "compressor_runtime_heating": {
+        "name": "Compressor Runtime (Heating)"
       },
-      "booster_starts_dhw": {
-        "name": "Booster Starts (DHW)"
+      "booster_runtime_dhw": {
+        "name": "Booster Runtime (DHW)"
       },
-      "booster_starts_heating": {
-        "name": "Booster Starts (Heating)"
+      "booster_runtime_heating": {
+        "name": "Booster Runtime (Heating)"
       },
       "cooling_hours": {
         "name": "Cooling Hours"

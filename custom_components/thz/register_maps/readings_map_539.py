@@ -239,4 +239,14 @@ REGISTER_MAP = {
             {**_TEMP, "translation_key": "dew_point_hc2"},
         ),
     ],
+    "pxx0C0011": [
+        (
+            "insideTempRCHC2:",
+            8,
+            4,
+            "hex2int",
+            10,
+            {**_TEMP, "icon": "mdi:home-thermometer", "translation_key": "inside_temp_rc_hc2"},
+        ),
+    ],
 }

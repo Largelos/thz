@@ -215,12 +215,12 @@ REGISTER_MAP = {
             {**_HUMIDITY, "translation_key": "rel_humidity"},
         ),
         (
-            "dewPoint:",
+            "relHumidityHC2:",
             82,
             4,
             "hex2int",
             10,
-            {**_TEMP, "icon": "mdi:weather-fog", "translation_key": "dew_point"},
+            {**_HUMIDITY, "translation_key": "rel_humidity_hc2"},
         ),
         (
             "P_Nd:",

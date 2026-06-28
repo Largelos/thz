@@ -74,7 +74,8 @@
           "refresh_pxx0A09D3": "Abfrageintervall: Feuchtigkeitssollwert Max (s)",
           "refresh_pxx0A0648": "Abfrageintervall: Kühlung Heizkreis gesamt (s)",
           "refresh_pxx0B0264": "Abfrageintervall: Taupunkt HK1 (s)",
-          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)"
+          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)",
+          "refresh_pxx0C0011": "Abfrageintervall: Innentemperatur Kontrolleinheit HK2 (s)"
         }
       },
       "setup_ip": {
@@ -154,7 +155,8 @@
           "refresh_pxx0A09D3": "Abfrageintervall: Feuchtigkeitssollwert Max (s)",
           "refresh_pxx0A0648": "Abfrageintervall: Kühlung Heizkreis gesamt (s)",
           "refresh_pxx0B0264": "Abfrageintervall: Taupunkt HK1 (s)",
-          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)"
+          "refresh_pxx0C0264": "Abfrageintervall: Taupunkt HK2 (s)",
+          "refresh_pxx0C0011": "Abfrageintervall: Innentemperatur Kontrolleinheit HK2 (s)"
         },
         "data_description": {
           "write_interval": "Wie oft beschreibbare Entitäten ihren Status synchronisieren (5-86400 Sekunden)"
@@ -319,6 +321,9 @@
       "rel_humidity": {
         "name": "Relative Luftfeuchtigkeit"
       },
+      "rel_humidity_hc2": {
+        "name": "Relative Luftfeuchtigkeit HK2"
+      },
       "dew_point": {
         "name": "Taupunkt"
       },
@@ -366,6 +371,9 @@
       },
       "inside_temp_rc": {
         "name": "Innentemperatur Kontrolleinheit"
+      },
+      "inside_temp_rc_hc2": {
+        "name": "Innentemperatur Kontrolleinheit HK2"
       },
       "season_mode": {
         "name": "Jahreszeitenmodus"
@@ -550,20 +558,20 @@
       "compressor_restart_delay": {
         "name": "Kompressor Wiederanlaufverzögerung"
       },
-      "compressor_starts_cooling": {
-        "name": "Verdichterstarts (Kühlung)"
+      "compressor_runtime_cooling": {
+        "name": "Laufzeit Verdichter (Kühlung)"
       },
-      "compressor_starts_dhw": {
-        "name": "Verdichterstarts (Warmwasser)"
+      "compressor_runtime_dhw": {
+        "name": "Laufzeit Verdichter (Warmwasser)"
       },
-      "compressor_starts_heating": {
-        "name": "Verdichterstarts (Heizung)"
+      "compressor_runtime_heating": {
+        "name": "Laufzeit Verdichter (Heizung)"
       },
-      "booster_starts_dhw": {
-        "name": "Heizstabstarts (Warmwasser)"
+      "booster_runtime_dhw": {
+        "name": "Laufzeit Heizstab (Warmwasser)"
       },
-      "booster_starts_heating": {
-        "name": "Heizstabstarts (Heizung)"
+      "booster_runtime_heating": {
+        "name": "Laufzeit Heizstab (Heizung)"
       },
       "cooling_hours": {
         "name": "Kühlstunden"
